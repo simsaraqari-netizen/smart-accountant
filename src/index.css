@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+  --color-ios-blue: #007AFF;
+  --color-ios-green: #34C759;
+  --color-ios-red: #FF3B30;
+  --color-ios-orange: #FF9500;
+  --color-ios-gray: #8E8E93;
+  --color-ios-background: #F2F2F7;
+}
+
+@layer base {
+  body {
+    @apply bg-[var(--color-ios-background)] text-gray-900 antialiased;
+    background: radial-gradient(circle at 10% 20%, rgba(0, 122, 255, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(52, 199, 89, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(255, 149, 0, 0.1) 0%, transparent 60%);
+    background-attachment: fixed;
+  }
+}
+
+.ios-glass {
+  @apply bg-[rgba(255,255,255,0.7)] backdrop-blur-[20px] backdrop-saturate-[180%] border border-white/50 shadow-[0_8px_32px_rgba(0,0,0,0.05)];
+}
+
+.ios-glass-dark {
+  @apply bg-[rgba(30,30,30,0.6)] backdrop-blur-[20px] backdrop-saturate-[180%] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.2)];
+}
+
+@layer components {
+  .ios-card {
+    @apply bg-[rgba(255,255,255,0.7)] backdrop-blur-[20px] backdrop-saturate-[180%] border border-white/50 shadow-[0_4px_16px_rgba(0,0,0,0.05)] rounded-lg overflow-hidden transition-opacity hover:opacity-90 active:opacity-80;
+  }
+
+  .ios-list-group {
+    @apply bg-[rgba(255,255,255,0.7)] backdrop-blur-[20px] backdrop-saturate-[180%] border border-white/50 rounded-md overflow-hidden divide-y divide-white/20;
+  }
+
+  .ios-list-item {
+    @apply px-4 py-3.5 flex items-center justify-between hover:bg-gray-50 transition-colors active:bg-gray-100;
+  }
+
+  .ios-button-primary {
+    @apply bg-[var(--color-ios-blue)] text-white font-semibold py-1.5 px-3 rounded-md hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100;
+  }
+
+  .ios-button-secondary {
+    @apply bg-gray-100 text-[var(--color-ios-blue)] font-semibold py-1.5 px-3 rounded-md hover:bg-gray-200 active:scale-95 transition-all;
+  }
+
+  .ios-button-danger {
+    @apply bg-rose-50 text-[var(--color-ios-red)] font-semibold py-1.5 px-3 rounded-md hover:bg-rose-100 active:scale-95 transition-all;
+  }
+
+  .ios-input {
+    @apply w-full bg-gray-100/50 border-none rounded-md px-2 py-1.5 focus:ring-2 focus:ring-[var(--color-ios-blue)] transition-all outline-none text-gray-900 placeholder:text-gray-400;
+  }
+
+  .ios-large-title {
+    @apply text-3xl font-bold text-gray-900 tracking-tight;
+  }
+
+  .ios-section-title {
+    @apply text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 mb-2;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-gray-300/50 rounded-full;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400/50;
+  }
+}

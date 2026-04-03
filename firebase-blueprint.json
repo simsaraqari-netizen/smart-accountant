@@ -1,0 +1,151 @@
+{
+  "entities": {
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A financial transaction record (income, expense, or custody movement)",
+      "type": "object",
+      "properties": {
+        "amount": { "type": "number", "description": "The monetary value of the transaction" },
+        "type": { "type": "string", "enum": ["income", "expense", "custody_in", "custody_out"], "description": "The type of transaction" },
+        "category": { "type": "string", "description": "The category of the transaction (e.g., Salary, Rent, Food)" },
+        "date": { "type": "string", "format": "date-time", "description": "The date and time of the transaction" },
+        "description": { "type": "string", "description": "A brief description or note" },
+        "userId": { "type": "string", "description": "The UID of the user who owns this record" },
+        "custodyAccountId": { "type": "string", "description": "Optional ID of the associated custody account" },
+        "personName": { "type": "string", "description": "Name of the person associated with this transaction" }
+      },
+      "required": ["amount", "type", "category", "date", "userId"]
+    },
+    "CustodyAccount": {
+      "title": "Custody Account",
+      "description": "An account for tracking petty cash or specific custody funds",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the custody account" },
+        "balance": { "type": "number", "description": "Current balance in this account" },
+        "userId": { "type": "string", "description": "The UID of the user who owns this account" }
+      },
+      "required": ["name", "balance", "userId"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "fcmTokens": { "type": "array", "items": { "type": "string" }, "description": "FCM tokens for push notifications" }
+      },
+      "required": ["email"]
+    },
+    "Reminder": {
+      "title": "Reminder",
+      "description": "A financial deadline or recurring transaction reminder",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "The title of the reminder" },
+        "description": { "type": "string", "description": "A brief description" },
+        "dueDate": { "type": "string", "format": "date-time", "description": "The next due date for the reminder" },
+        "isRecurring": { "type": "boolean", "description": "Whether the reminder is recurring" },
+        "frequency": { "type": "string", "enum": ["daily", "weekly", "monthly", "yearly"], "description": "The frequency of recurrence" },
+        "userId": { "type": "string", "description": "The UID of the user who owns this reminder" },
+        "lastNotified": { "type": "string", "format": "date-time", "description": "When the user was last notified" },
+        "enabled": { "type": "boolean", "description": "Whether the reminder is active" }
+      },
+      "required": ["title", "dueDate", "userId", "enabled"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "User-specific application settings",
+      "type": "object",
+      "properties": {
+        "sheetUrl": { "type": "string", "description": "The URL of the Google Apps Script Web App for sync" }
+      }
+    },
+    "Category": {
+      "title": "Category",
+      "description": "A dynamic category for transactions",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the category" },
+        "type": { "type": "string", "enum": ["income", "expense"], "description": "The type of transaction this category belongs to" },
+        "userId": { "type": "string", "description": "The UID of the user who owns this category" }
+      },
+      "required": ["name", "type", "userId"]
+    },
+    "Person": {
+      "title": "Person",
+      "description": "A person associated with transactions",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the person" },
+        "userId": { "type": "string", "description": "The UID of the user who owns this record" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the person was added" }
+      },
+      "required": ["name", "userId"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "A comment on a transaction or company",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "targetId": { "type": "string" }
+      },
+      "required": ["text", "userId", "createdAt", "targetId"]
+    },
+    "Advertisement": {
+      "title": "Advertisement",
+      "description": "An advertisement for a company",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Global collection of transactions"
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "User-specific transaction categories"
+    },
+    "/custody_accounts/{accountId}": {
+      "schema": "CustodyAccount",
+      "description": "Global collection of custody accounts"
+    },
+    "/persons/{personId}": {
+      "schema": "Person",
+      "description": "User-specific persons list"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/settings/{userId}": {
+      "schema": "Settings",
+      "description": "User-specific settings documents"
+    },
+    "/reminders/{reminderId}": {
+      "schema": "Reminder",
+      "description": "User-specific reminders for financial deadlines"
+    },
+    "/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Comments on transactions or companies"
+    },
+    "/advertisements/{adId}": {
+      "schema": "Advertisement",
+      "description": "Advertisements"
+    }
+  }
+}

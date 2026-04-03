@@ -1,0 +1,17 @@
+{
+  "short_name": "المحاسب",
+  "name": "المحاسب الذكي - Smart Accountant",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><circle cx='256' cy='256' r='256' fill='%23059669'/><g transform='translate(102.4, 102.4) scale(12.8)' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'><path d='M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z'/><path d='M14 8H8'/><path d='M16 12H8'/><path d='M13 16H8'/></g></svg>",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#F8FAFC",
+  "display": "standalone",
+  "theme_color": "#059669",
+  "description": "تطبيق محاسبي متكامل لمتابعة المصاريف والإيرادات والعهدة."
+}

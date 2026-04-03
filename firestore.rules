@@ -1,0 +1,254 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: transactions
+    // Fields:
+    //   - amount: number (required)
+    //   - type: string (required, ['income', 'expense', 'custody_in', 'custody_out'])
+    //   - category: string (required)
+    //   - date: timestamp (required)
+    //   - description: string (optional)
+    //   - userId: string (required)
+    //   - custodyAccountId: string (optional)
+    //
+    // Collection: custody_accounts
+    // Fields:
+    //   - name: string (required)
+    //   - balance: number (required)
+    //   - userId: string (required)
+    //
+    // Collection: users
+    // Fields:
+    //   - email: string (required)
+    //   - displayName: string (optional)
+    //   - role: string (required, ['admin', 'user'])
+    //
+    // Collection: settings
+    // Fields:
+    //   - sheetUrl: string (optional)
+    //
+    // Collection: categories
+    // Fields:
+    //   - name: string (required)
+    //   - type: string (required, ['income', 'expense'])
+    //   - userId: string (required)
+    //
+    // Collection: persons
+    // Fields:
+    //   - name: string (required)
+    //   - userId: string (required)
+    //   - createdAt: timestamp (optional)
+    //
+    // Collection: reminders
+    // Fields:
+    //   - title: string (required)
+    //   - description: string (optional)
+    //   - dueDate: timestamp (required)
+    //   - isRecurring: bool (optional)
+    //   - frequency: string (optional, ['daily', 'weekly', 'monthly', 'yearly'])
+    //   - userId: string (required)
+    //   - lastNotified: timestamp (optional)
+    //   - enabled: bool (required)
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function getUserDoc() {
+      let path = /databases/$(database)/documents/users/$(request.auth.uid);
+      return exists(path) ? get(path) : null;
+    }
+
+    function getTenantId() {
+      let doc = getUserDoc();
+      return doc != null && ('tenantId' in doc.data) ? doc.data.tenantId : request.auth.uid;
+    }
+
+    function isSystemAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'simsaraqari@gmail.com' ||
+        request.auth.token.email == 'admin@internal.app'
+      );
+    }
+
+    function isTenantAdmin() {
+      let doc = getUserDoc();
+      return doc != null && ('role' in doc.data) && doc.data.role == 'admin';
+    }
+
+    function isAuthorizedAdmin() {
+      return isSystemAdmin() || isTenantAdmin();
+    }
+
+    function belongsToTenant(data) {
+      return isSystemAdmin() || data.userId == getTenantId();
+    }
+
+    function isValidTransaction(data) {
+      return data.keys().hasOnly(['amount', 'type', 'category', 'date', 'userId', 'description', 'personName', 'isCustodyLinked', 'custodyAccountId', 'custodyAmount', 'splits', 'splitType']) &&
+             data.amount is number && data.amount >= 0 &&
+             data.type in ['income', 'expense', 'custody_in', 'custody_out'] &&
+             data.category is string && data.category.size() > 0 && data.category.size() < 100 &&
+             data.date is timestamp &&
+             data.userId is string &&
+             (!('description' in data) || (data.description is string && data.description.size() < 500)) &&
+             (!('personName' in data) || (data.personName is string && data.personName.size() < 100)) &&
+             (!('isCustodyLinked' in data) || data.isCustodyLinked is bool) &&
+             (!('custodyAccountId' in data) || data.custodyAccountId == null || (data.custodyAccountId is string && data.custodyAccountId.size() < 100)) &&
+             (!('custodyAmount' in data) || data.custodyAmount is number) &&
+             (!('splits' in data) || (data.splits is list)) &&
+             (!('splitType' in data) || (data.splitType in ['individual', 'joint']));
+    }
+
+    function isValidCustodyAccount(data) {
+      return data.keys().hasOnly(['name', 'balance', 'userId']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.balance is number &&
+             data.userId is string;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasOnly(['email', 'displayName', 'role', 'createdAt', 'lastLogin', 'username', 'tenantId', 'fcmTokens']) &&
+             data.email is string && data.email.matches("^[^@]+@[^@]+\\.[^@]+$") &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() < 100)) &&
+             (!('username' in data) || (data.username is string && data.username.size() < 100)) &&
+             data.role in ['admin', 'user'] &&
+             (!('createdAt' in data) || data.createdAt is timestamp) &&
+             (!('lastLogin' in data) || data.lastLogin is timestamp) &&
+             (!('tenantId' in data) || data.tenantId is string) &&
+             (!('fcmTokens' in data) || (data.fcmTokens is list));
+    }
+
+    function isValidCategory(data) {
+      return data.keys().hasOnly(['name', 'type', 'userId']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.type in ['income', 'expense'] &&
+             data.userId is string;
+    }
+
+    function isValidPerson(data) {
+      return data.keys().hasOnly(['name', 'userId', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.userId is string &&
+             (!('createdAt' in data) || data.createdAt is timestamp);
+    }
+
+    function isValidSettings(data) {
+      return data.keys().hasOnly(['sheetUrl', 'notificationsEnabled']) &&
+             (!('sheetUrl' in data) || (data.sheetUrl is string && data.sheetUrl.size() < 500)) &&
+             (!('notificationsEnabled' in data) || data.notificationsEnabled is bool);
+    }
+
+    function isValidReminder(data) {
+      return data.keys().hasOnly(['title', 'description', 'dueDate', 'isRecurring', 'frequency', 'userId', 'lastNotified', 'enabled']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             (!('description' in data) || (data.description is string && data.description.size() < 500)) &&
+             data.dueDate is timestamp &&
+             (!('isRecurring' in data) || data.isRecurring is bool) &&
+             (!('frequency' in data) || data.frequency in ['daily', 'weekly', 'monthly', 'yearly']) &&
+             data.userId is string &&
+             (!('lastNotified' in data) || data.lastNotified is timestamp) &&
+             data.enabled is bool;
+    }
+
+    function isValidComment(data) {
+      return data.keys().hasOnly(['text', 'userId', 'createdAt', 'targetId']) &&
+             data.text is string && data.text.size() > 0 && data.text.size() < 1000 &&
+             data.userId is string &&
+             data.createdAt is timestamp &&
+             data.targetId is string && data.targetId.size() < 100;
+    }
+
+    function isValidAdvertisement(data) {
+      return data.keys().hasOnly(['title', 'content', 'imageUrl', 'createdAt']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 2000 &&
+             (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() < 500)) &&
+             data.createdAt is timestamp;
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // Rules
+    match /transactions/{transactionId} {
+      allow read: if isAuthenticated() && belongsToTenant(resource.data);
+      allow create: if isAuthenticated() && isAuthorizedAdmin() && belongsToTenant(request.resource.data) && isValidTransaction(request.resource.data);
+      allow update: if isAuthenticated() && isAuthorizedAdmin() && belongsToTenant(resource.data) && belongsToTenant(request.resource.data) && isValidTransaction(request.resource.data) && areImmutableFieldsUnchanged(['userId']);
+      allow delete: if isAuthenticated() && isAuthorizedAdmin() && belongsToTenant(resource.data);
+    }
+
+    match /custody_accounts/{accountId} {
+      allow read: if isAuthenticated() && belongsToTenant(resource.data);
+      allow create: if isAuthenticated() && isAuthorizedAdmin() && belongsToTenant(request.resource.data) && isValidCustodyAccount(request.resource.data);
+      allow update: if isAuthenticated() && isAuthorizedAdmin() && belongsToTenant(resource.data) && belongsToTenant(request.resource.data) && isValidCustodyAccount(request.resource.data) && areImmutableFieldsUnchanged(['userId']);
+      allow delete: if isAuthenticated() && isAuthorizedAdmin() && belongsToTenant(resource.data);
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (userId == request.auth.uid || (getTenantId() == resource.data.tenantId && isAuthorizedAdmin()));
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && (
+        (userId == request.auth.uid && request.resource.data.tenantId == request.auth.uid && request.resource.data.role == 'admin') ||
+        (isAuthorizedAdmin() && request.resource.data.tenantId == getTenantId())
+      );
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && (
+        (userId == request.auth.uid && request.resource.data.role == resource.data.role && request.resource.data.tenantId == resource.data.tenantId && (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt)) ||
+        (isAuthorizedAdmin() && resource.data.tenantId == getTenantId() && request.resource.data.tenantId == getTenantId() && (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt))
+      );
+      allow delete: if isAuthenticated() && isAuthorizedAdmin() && resource.data.tenantId == getTenantId() && userId != request.auth.uid;
+    }
+
+    match /settings/{settingId} {
+      allow read: if isAuthenticated() && settingId == getTenantId();
+      allow create, update: if isAuthenticated() && isAuthorizedAdmin() && settingId == getTenantId() && isValidSettings(request.resource.data);
+      allow delete: if isAuthenticated() && isAuthorizedAdmin() && settingId == getTenantId();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if isAuthenticated() && belongsToTenant(resource.data);
+      allow create: if isAuthenticated() && isAuthorizedAdmin() && belongsToTenant(request.resource.data) && isValidCategory(request.resource.data);
+      allow update: if isAuthenticated() && isAuthorizedAdmin() && belongsToTenant(resource.data) && belongsToTenant(request.resource.data) && isValidCategory(request.resource.data) && areImmutableFieldsUnchanged(['userId']);
+      allow delete: if isAuthenticated() && isAuthorizedAdmin() && belongsToTenant(resource.data);
+    }
+
+    match /persons/{personId} {
+      allow read: if isAuthenticated() && belongsToTenant(resource.data);
+      allow create: if isAuthenticated() && isAuthorizedAdmin() && belongsToTenant(request.resource.data) && isValidPerson(request.resource.data);
+      allow update: if isAuthenticated() && isAuthorizedAdmin() && belongsToTenant(resource.data) && belongsToTenant(request.resource.data) && isValidPerson(request.resource.data) && areImmutableFieldsUnchanged(['userId']);
+      allow delete: if isAuthenticated() && isAuthorizedAdmin() && belongsToTenant(resource.data);
+    }
+
+    match /reminders/{reminderId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || belongsToTenant(resource.data));
+      allow create: if isAuthenticated() && isAuthorizedAdmin() && belongsToTenant(request.resource.data) && isValidReminder(request.resource.data);
+      allow update: if isAuthenticated() && isAuthorizedAdmin() && belongsToTenant(resource.data) && belongsToTenant(request.resource.data) && isValidReminder(request.resource.data) && areImmutableFieldsUnchanged(['userId']);
+      allow delete: if isAuthenticated() && isAuthorizedAdmin() && belongsToTenant(resource.data);
+    }
+
+    match /comments/{commentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isAuthorizedAdmin() && isValidComment(request.resource.data);
+      allow update: if isAuthenticated() && isAuthorizedAdmin() && isValidComment(request.resource.data) && areImmutableFieldsUnchanged(['userId', 'createdAt']);
+      allow delete: if isAuthenticated() && isAuthorizedAdmin();
+    }
+
+    match /advertisements/{adId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isAuthorizedAdmin() && isValidAdvertisement(request.resource.data);
+      allow update: if isAuthenticated() && isAuthorizedAdmin() && isValidAdvertisement(request.resource.data) && areImmutableFieldsUnchanged(['createdAt']);
+      allow delete: if isAuthenticated() && isAuthorizedAdmin();
+    }
+  }
+}
