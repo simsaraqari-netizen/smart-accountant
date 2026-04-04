@@ -28,70 +28,35 @@ export const LoginPage: React.FC = () => {
     }, 500);
   };
 
-  const handleDemoAdminLogin = () => {
-    setUsername('مدير النظام');
-    setPassword('6581490
-cd "/Users/masmastech/Library/CloudStorage/GoogleDrive-simsaraqari@gmail.com/My Drive/المحاسب الذكي/المحاسب-الذكي---smart-accountant" && git add . && git commit -m "Fix LoginPage - remove Firebase auth and use local authentication only" && git push
-cat > "/Users/masmastech/Library/CloudStorage/GoogleDrive-simsaraqari@gmail.com/My Drive/المحاسب الذكي/المحاسب-الذكي---smart-accountant/src/auth/AuthContext.tsx" << 'EOF'
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-
-export interface User {
-  username: string;
-  password: string;
-  role: 'super_admin' | 'admin' | 'user';
-}
-
-interface AuthContextType {
-  isLoggedIn: boolean;
-  currentUser: User | null;
-  login: (username: string, password: string) => boolean;
-  logout: () => void;
-  isSuperAdmin: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const DEFAULT_USERS: User[] = [
-  { username: 'مدير النظام', password: '65814909', role: 'super_admin' },
-  { username: 'ابوابرهيم', password: '12345678', role: 'user' },
-];
-
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-
-  const login = (username: string, password: string): boolean => {
-    const user = DEFAULT_USERS.find(u => u.username === username && u.password === password);
-    
-    if (user) {
-      setCurrentUser(user);
-      setIsLoggedIn(true);
-      localStorage.setItem('smartAccountant_currentUser', JSON.stringify(user));
-      return true;
-    }
-    
-    return false;
-  };
-
-  const logout = () => {
-    setIsLoggedIn(false);
-    setCurrentUser(null);
-    localStorage.removeItem('smartAccountant_currentUser');
-  };
-
-  const isSuperAdmin = currentUser?.role === 'super_admin';
-
   return (
-    <AuthContext.Provider value={{ isLoggedIn, currentUser, login, logout, isSuperAdmin }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #1b3a6b 0%, #f07820 100%)', padding: '20px' }}>
+      <div style={{ background: 'white', borderRadius: '12px', boxShadow: '0 10px 40px rgba(0,0,0,0.2)', maxWidth: '450px', width: '100%', padding: '40px 30px', direction: 'rtl' }}>
+        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+          <h1 style={{ color: '#1b3a6b', fontSize: '32px', margin: '0 0 10px 0', fontWeight: 700 }}>المحاسب الذكي</h1>
+          <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>نظام إدارة الحسابات المتقدم</p>
+        </div>
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
+        <form onSubmit={handleLogin} style={{ marginBottom: '30px' }}>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', color: '#333', fontWeight: 600, marginBottom: '8px', fontSize: '14px' }}>اسم المستخدم</label>
+            <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="أدخل اسم المستخدم" disabled={isLoading} autoFocus style={{ width: '100%', padding: '12px 15px', border: '2px solid #e0e0e0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }} />
+          </div>
+
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', color: '#333', fontWeight: 600, marginBottom: '8px', fontSize: '14px' }}>كلمة المرور</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="أدخل كلمة المرور" disabled={isLoading} style={{ width: '100%', padding: '12px 15px', border: '2px solid #e0e0e0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }} />
+          </div>
+
+          {error && <div style={{ background: '#fee', color: '#c33', padding: '12px', borderRadius: '6px', marginBottom: '15px', fontSize: '14px', borderRight: '4px solid #c33' }}>{error}</div>}
+
+          <button type="submit" disabled={isLoading} style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #1b3a6b 0%, #f07820 100%)', color: 'white', border: 'none', borderRadius: '6px', fontSize: '16px', fontWeight: 600, cursor: 'pointer' }}>{isLoading ? 'جاري التحقق...' : 'تسجيل الدخول'}</button>
+        </form>
+
+        <div style={{ background: '#f9f9f9', borderRadius: '8px', padding: '15px', border: '1px solid #e0e0e0' }}>
+          <h3 style={{ margin: '0 0 12px 0', color: '#333', fontSize: '14px', fontWeight: 600 }}>البيانات التجريبية:</h3>
+          <div><div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '10px' }}><span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, background: '#e3f2fd', color: '#1b3a6b', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>مسؤول</span><div style={{ fontSize: '12px' }}><p style={{ margin: '2px 0', color: '#555' }}><strong>اسم:</strong> مدير النظام</p><p style={{ margin: '2px 0', color: '#555' }}><strong>كلمة المرور:</strong> 65814909</p></div></div><div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}><span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, background: '#fff3e0', color: '#f07820', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>مستخدم</span><div style={{ fontSize: '12px' }}><p style={{ margin: '2px 0', color: '#555' }}><strong>اسم:</strong> ابوابرهيم</p><p style={{ margin: '2px 0', color: '#555' }}><strong>كلمة المرور:</strong> 12345678</p></div></div></div>
+        </div>
+      </div>
+    </div>
+  );
 };
