@@ -420,51 +420,65 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       if (u) {
         setUser(u);
-        // Fetch user role
-        const userDoc = await getDoc(doc(db, 'users', u.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          let currentTenantId = data.tenantId || u.uid;
-          
-          // Auto-link admin@internal.app to the main Google account's data
-          if (u.email === 'admin@internal.app' || u.email === 'user@internal.app') {
-            const q = query(collection(db, 'users'), where('email', '==', 'simsaraqari@gmail.com'));
-            const querySnapshot = await getDocs(q);
-            if (!querySnapshot.empty) {
-              const mainUserDoc = querySnapshot.docs[0];
-              const mainTenantId = mainUserDoc.data().tenantId || mainUserDoc.id;
-              if (currentTenantId !== mainTenantId) {
-                await updateDoc(doc(db, 'users', u.uid), { tenantId: mainTenantId });
-                currentTenantId = mainTenantId;
+        try {
+          // Fetch user role
+          const userDoc = await getDoc(doc(db, 'users', u.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            let currentTenantId = data.tenantId || u.uid;
+            
+            // Auto-link admin@internal.app to the main Google account's data
+            if (u.email === 'admin@internal.app' || u.email === 'user@internal.app') {
+              try {
+                const q = query(collection(db, 'users'), where('email', '==', 'simsaraqari@gmail.com'));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                  const mainUserDoc = querySnapshot.docs[0];
+                  const mainTenantId = mainUserDoc.data().tenantId || mainUserDoc.id;
+                  if (currentTenantId !== mainTenantId) {
+                    await updateDoc(doc(db, 'users', u.uid), { tenantId: mainTenantId });
+                    currentTenantId = mainTenantId;
+                  }
+                }
+              } catch (err) {
+                console.error("Migration error (existing):", err);
               }
             }
-          }
-          
-          setUserRole(data.role);
-          setTenantId(currentTenantId);
-        } else {
-          // If user document doesn't exist, create it as 'admin' of their own tenant
-          const role = u.email === 'user@internal.app' ? 'user' : 'admin';
-          let newTenantId = u.uid;
-          
-          if (u.email === 'admin@internal.app' || u.email === 'user@internal.app') {
-            const q = query(collection(db, 'users'), where('email', '==', 'simsaraqari@gmail.com'));
-            const querySnapshot = await getDocs(q);
-            if (!querySnapshot.empty) {
-              const mainUserDoc = querySnapshot.docs[0];
-              newTenantId = mainUserDoc.data().tenantId || mainUserDoc.id;
+            
+            setUserRole(data.role);
+            setTenantId(currentTenantId);
+          } else {
+            // If user document doesn't exist, create it as 'admin' of their own tenant
+            const role = u.email === 'user@internal.app' ? 'user' : 'admin';
+            let newTenantId = u.uid;
+            
+            if (u.email === 'admin@internal.app' || u.email === 'user@internal.app') {
+              try {
+                const q = query(collection(db, 'users'), where('email', '==', 'simsaraqari@gmail.com'));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                  const mainUserDoc = querySnapshot.docs[0];
+                  newTenantId = mainUserDoc.data().tenantId || mainUserDoc.id;
+                }
+              } catch (err) {
+                console.error("Migration error (new):", err);
+              }
             }
+            
+            await setDoc(doc(db, 'users', u.uid), {
+              email: u.email,
+              displayName: u.displayName || '',
+              role: role,
+              tenantId: newTenantId,
+              createdAt: Timestamp.now()
+            });
+            setUserRole(role);
+            setTenantId(newTenantId);
           }
-          
-          await setDoc(doc(db, 'users', u.uid), {
-            email: u.email,
-            displayName: u.displayName || '',
-            role: role,
-            tenantId: newTenantId,
-            createdAt: Timestamp.now()
-          });
-          setUserRole(role);
-          setTenantId(newTenantId);
+        } catch (error) {
+          console.error("Error in auth state change:", error);
+          setUserRole(null);
+          setTenantId(null);
         }
       } else {
         setUser(null);

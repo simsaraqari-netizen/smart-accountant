@@ -198,7 +198,7 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if isAuthenticated() && (userId == request.auth.uid || (getTenantId() == resource.data.tenantId && isAuthorizedAdmin()));
+      allow read: if isAuthenticated() && (isSystemAdmin() || userId == request.auth.uid || (getTenantId() == resource.data.tenantId && isAuthorizedAdmin()));
       allow create: if isAuthenticated() && isValidUser(request.resource.data) && (
         (userId == request.auth.uid && request.resource.data.tenantId == request.auth.uid && request.resource.data.role == 'admin') ||
         (isAuthorizedAdmin() && request.resource.data.tenantId == getTenantId())
