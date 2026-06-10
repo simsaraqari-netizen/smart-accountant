@@ -424,20 +424,47 @@ export default function App() {
         const userDoc = await getDoc(doc(db, 'users', u.uid));
         if (userDoc.exists()) {
           const data = userDoc.data();
+          let currentTenantId = data.tenantId || u.uid;
+          
+          // Auto-link admin@internal.app to the main Google account's data
+          if (u.email === 'admin@internal.app' || u.email === 'user@internal.app') {
+            const q = query(collection(db, 'users'), where('email', '==', 'simsaraqari@gmail.com'));
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+              const mainUserDoc = querySnapshot.docs[0];
+              const mainTenantId = mainUserDoc.data().tenantId || mainUserDoc.id;
+              if (currentTenantId !== mainTenantId) {
+                await updateDoc(doc(db, 'users', u.uid), { tenantId: mainTenantId });
+                currentTenantId = mainTenantId;
+              }
+            }
+          }
+          
           setUserRole(data.role);
-          setTenantId(data.tenantId || u.uid);
+          setTenantId(currentTenantId);
         } else {
           // If user document doesn't exist, create it as 'admin' of their own tenant
-          const role = 'admin';
+          const role = u.email === 'user@internal.app' ? 'user' : 'admin';
+          let newTenantId = u.uid;
+          
+          if (u.email === 'admin@internal.app' || u.email === 'user@internal.app') {
+            const q = query(collection(db, 'users'), where('email', '==', 'simsaraqari@gmail.com'));
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+              const mainUserDoc = querySnapshot.docs[0];
+              newTenantId = mainUserDoc.data().tenantId || mainUserDoc.id;
+            }
+          }
+          
           await setDoc(doc(db, 'users', u.uid), {
             email: u.email,
             displayName: u.displayName || '',
             role: role,
-            tenantId: u.uid,
+            tenantId: newTenantId,
             createdAt: Timestamp.now()
           });
           setUserRole(role);
-          setTenantId(u.uid);
+          setTenantId(newTenantId);
         }
       } else {
         setUser(null);
