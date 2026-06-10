@@ -1187,22 +1187,15 @@ export default function App() {
   const handleLogin = async () => {
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
-    } catch (error: any) {
+    } catch (error) {
       console.error('Login Error:', error);
-      alert('حدث خطأ أثناء تسجيل الدخول بواسطة جوجل: ' + (error.message || error));
     }
   };
 
   const formatAuthEmail = (input: string) => {
     const trimmed = input.trim().toLowerCase();
     if (trimmed.includes('@')) return trimmed;
-    
-    if (trimmed === 'مدير النظام') return 'admin@internal.app';
-    if (trimmed === 'ابوابرهيم') return 'user@internal.app';
-    
-    // Encode any special/Arabic characters so Firebase Auth accepts it as a valid email string
-    const encoded = encodeURIComponent(trimmed).replace(/%/g, '_');
-    return `${encoded}@internal.app`;
+    return `${trimmed}@internal.app`;
   };
 
   const handleEmailAuth = async (e: React.FormEvent) => {

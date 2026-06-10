@@ -1,12 +1,22 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
 import path from 'path';
+import fs from 'fs';
 import cron from 'node-cron';
 import rateLimit from 'express-rate-limit';
+import 'dotenv/config';
 
 // Initialize Firebase Admin
 try {
+  // Check if GOOGLE_APPLICATION_CREDENTIALS exists and file is readable
+  const credsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  if (!credsPath || !fs.existsSync(credsPath)) {
+    console.warn('\n⚠️ WARNING: GOOGLE_APPLICATION_CREDENTIALS is not set or the file is missing!');
+    console.warn('⚠️ Push notifications and background syncing will NOT work without it.');
+    console.warn('⚠️ Please download serviceAccountKey.json from Firebase and place it in the project root.\n');
+  }
+
   admin.initializeApp();
   console.log('Firebase Admin initialized successfully');
 } catch (error) {
@@ -166,7 +176,7 @@ cron.schedule('0 0 * * *', async () => {
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = parseInt(process.env.PORT || '3001', 10);
 
   app.use(express.json());
   app.use('/api/', limiter);
