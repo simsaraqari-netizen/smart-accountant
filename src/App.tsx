@@ -286,6 +286,7 @@ export default function App() {
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [showUserManagementModal, setShowUserManagementModal] = useState(false);
   const [showPersonsModal, setShowPersonsModal] = useState(false);
+  const [selectedPersonProfile, setSelectedPersonProfile] = useState<any | null>(null);
   const [editingPerson, setEditingPerson] = useState<any | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<any | null>(null);
   const [newUserForm, setNewUserForm] = useState({
@@ -2655,8 +2656,34 @@ export default function App() {
               </div>
             </motion.div>
           )}
+          {activeTab === 'persons' && (
+            <motion.div 
+              key="persons"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-8"
+            >
+              <PersonsDashboard 
+                persons={persons}
+                transactions={transactions}
+                onOpenAddPerson={() => {
+                  setEditingPerson(null);
+                  setShowPersonsModal(true);
+                }}
+                onOpenPersonProfile={(person) => setSelectedPersonProfile(person)}
+              />
+            </motion.div>
+          )}
         </AnimatePresence>
       </main>
+
+      <PersonProfileModal 
+        isOpen={selectedPersonProfile !== null}
+        onClose={() => setSelectedPersonProfile(null)}
+        person={selectedPersonProfile}
+        transactions={transactions}
+      />
 
       <PersonsModal 
         isOpen={showPersonsModal}
