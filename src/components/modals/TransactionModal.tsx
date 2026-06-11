@@ -211,10 +211,10 @@ export const TransactionModal = ({
 
                   <div>
                     <div className="flex justify-between items-center mb-1">
-                      <label className="block text-[10px] font-black text-gray-400 tracking-widest uppercase">الشخص</label>
+                      <label className="block text-[10px] font-black text-gray-400 tracking-widest uppercase">الموظف</label>
                       {onOpenAddPerson && (
                         <button type="button" onClick={onOpenAddPerson} className="text-[10px] font-bold text-blue-500 hover:text-blue-600 flex items-center gap-0.5">
-                          <Plus className="w-3 h-3" /> إضافة شخص
+                          <Plus className="w-3 h-3" /> إضافة موظف
                         </button>
                       )}
                     </div>
@@ -224,7 +224,7 @@ export const TransactionModal = ({
                       value={transaction.personName}
                       onChange={(e) => setTransaction({ ...transaction, personName: e.target.value })}
                       className="w-full bg-white border-2 border-gray-100 rounded-xl p-3 text-sm font-bold text-right focus:border-blue-500 transition-all outline-none"
-                      placeholder="اسم الشخص (اختياري)..."
+                      placeholder="اسم الموظف (اختياري)..."
                     />
                     <datalist id="persons-list">
                       {persons.map(p => <option key={p.id} value={p.name} />)}
@@ -377,7 +377,7 @@ export const TransactionModal = ({
 
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="block text-[8px] font-black text-gray-400 mb-1 tracking-widest uppercase">الشخص</label>
+                            <label className="block text-[8px] font-black text-gray-400 mb-1 tracking-widest uppercase">الموظف</label>
                             <input 
                               type="text" 
                               list="persons-list"
@@ -385,7 +385,7 @@ export const TransactionModal = ({
                               value={split.personName}
                               onChange={(e) => handleSplitChange(index, 'personName', e.target.value)}
                               className="w-full bg-white border border-gray-200 rounded-lg p-2 text-xs font-bold text-right outline-none focus:border-blue-400"
-                              placeholder="اسم الشخص..."
+                              placeholder="اسم الموظف..."
                             />
                           </div>
                           <div>

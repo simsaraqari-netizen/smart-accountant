@@ -59,7 +59,7 @@ export const PersonsModal = ({
             >
               <div className="p-4 border-b border-gray-50 flex justify-between items-center bg-white sticky top-0 z-10">
                 <div className="w-10"></div>
-                <h3 className="text-lg font-black text-blue-600">إدارة الأشخاص</h3>
+                <h3 className="text-lg font-black text-blue-600">إدارة الموظفين</h3>
                 <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600">
                   <ChevronLeft className="w-6 h-6" />
                 </button>
@@ -68,12 +68,12 @@ export const PersonsModal = ({
               <div className="flex-1 p-6 overflow-y-auto space-y-6">
                 <div className="flex items-center gap-2 mb-2">
                   <Users className="w-5 h-5 text-emerald-600" />
-                  <h4 className="text-sm font-black text-gray-900">الأشخاص والجهات</h4>
+                  <h4 className="text-sm font-black text-gray-900">الموظفين</h4>
                 </div>
                 <div className="flex gap-2">
                   <input 
                     type="text"
-                    placeholder="اسم الشخص الجديد"
+                    placeholder="اسم الموظف الجديد"
                     className="flex-grow bg-gray-50 border-2 border-gray-100 rounded-xl p-3 text-sm font-bold text-right focus:border-blue-500 transition-all outline-none"
                     onKeyDown={async (e) => {
                       if (e.key === 'Enter' && e.currentTarget.value) {

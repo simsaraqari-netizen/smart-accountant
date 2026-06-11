@@ -78,8 +78,8 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
             <Users className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-lg font-black text-gray-900">إدارة الأشخاص والجهات</h2>
-            <p className="text-xs font-bold text-gray-500">متابعة حسابات العملاء والموردين</p>
+            <h2 className="text-lg font-black text-gray-900">إدارة الموظفين</h2>
+            <p className="text-xs font-bold text-gray-500">متابعة حسابات الموظفين</p>
           </div>
         </div>
         <button 
@@ -87,7 +87,7 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
           className="bg-blue-600 text-white px-4 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
         >
           <UserPlus className="w-4 h-4" />
-          إضافة شخص
+          إضافة موظف
         </button>
       </div>
 
@@ -96,7 +96,7 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
           type="text" 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="ابحث عن شخص أو جهة..."
+          placeholder="ابحث عن موظف..."
           className="w-full bg-white border-2 border-gray-100 rounded-2xl p-4 pl-12 text-sm font-bold text-right focus:border-blue-500 transition-all outline-none shadow-sm"
         />
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -188,9 +188,9 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
           <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <Users className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-black text-gray-900 mb-2">لا يوجد أشخاص</h3>
+          <h3 className="text-lg font-black text-gray-900 mb-2">لا يوجد موظفين</h3>
           <p className="text-sm font-bold text-gray-500">
-            {searchTerm ? 'لم يتم العثور على نتائج للبحث.' : 'قم بإضافة أشخاص أو جهات لتتمكن من متابعة حساباتهم بشكل منفصل.'}
+            {searchTerm ? 'لم يتم العثور على نتائج للبحث.' : 'قم بإضافة موظفين لتتمكن من متابعة حساباتهم بشكل منفصل.'}
           </p>
         </div>
       )}

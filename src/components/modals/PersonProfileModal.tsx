@@ -102,7 +102,7 @@ export const PersonProfileModal: React.FC<PersonProfileModalProps> = ({
             
             {/* Print Header */}
             <div className="hidden print:block text-center mb-8 border-b-2 border-gray-200 pb-4">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">كشف حساب عميل</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">كشف حساب موظف</h1>
               <p className="text-sm text-gray-500">تاريخ الإصدار: {format(new Date(), 'PPP', { locale: ar })}</p>
             </div>
 
@@ -153,7 +153,7 @@ export const PersonProfileModal: React.FC<PersonProfileModalProps> = ({
                 </h4>
                 
                 {personTransactions.length === 0 ? (
-                  <p className="text-center text-sm font-bold text-gray-400 py-8">لا توجد عمليات مسجلة لهذا الشخص.</p>
+                  <p className="text-center text-sm font-bold text-gray-400 py-8">لا توجد عمليات مسجلة لهذا الموظف.</p>
                 ) : (
                   <div className="space-y-3 print:space-y-0 print:border print:border-gray-200">
                     {/* Print Table Header */}
