@@ -12,3 +12,5 @@ dist/
 tmp-npm-cache/
 node_modules/
 dist/
+.vercel
+serviceAccountKey.json

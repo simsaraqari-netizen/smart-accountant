@@ -94,26 +94,51 @@ export const Sidebar = ({
 
               <div className="space-y-2">
                 <p className="ios-section-title">الملخص المالي</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100 flex flex-col items-center justify-center cursor-pointer hover:bg-emerald-100 transition-colors" onClick={() => { setActiveTab('transactions'); onClose(); }}>
-                    <ArrowUpRight className="w-5 h-5 text-emerald-600 mb-1" />
-                    <span className="text-[10px] font-bold text-emerald-600/70 mb-1">الإيرادات</span>
-                    <span className="text-sm font-black text-emerald-700 text-center break-all"><FormattedNumber amount={totals.income} /></span>
-                  </div>
-                  <div className="bg-rose-50 p-3 rounded-xl border border-rose-100 flex flex-col items-center justify-center cursor-pointer hover:bg-rose-100 transition-colors" onClick={() => { setActiveTab('transactions'); onClose(); }}>
-                    <ArrowDownLeft className="w-5 h-5 text-rose-600 mb-1" />
-                    <span className="text-[10px] font-bold text-rose-600/70 mb-1">المصاريف</span>
-                    <span className="text-sm font-black text-rose-700 text-center break-all"><FormattedNumber amount={totals.expense} /></span>
-                  </div>
-                  <div className="bg-amber-50 p-3 rounded-xl border border-amber-100 flex flex-col items-center justify-center cursor-pointer hover:bg-amber-100 transition-colors" onClick={() => { setActiveTab('custody'); onClose(); }}>
-                    <Coins className="w-5 h-5 text-amber-600 mb-1" />
-                    <span className="text-[10px] font-bold text-amber-600/70 mb-1">العهدة</span>
-                    <span className="text-sm font-black text-amber-700 text-center break-all"><FormattedNumber amount={custodyTotal} /></span>
-                  </div>
-                  <div className={`${profitLoss >= 0 ? 'bg-blue-50 border-blue-100' : 'bg-orange-50 border-orange-100'} p-3 rounded-xl border flex flex-col items-center justify-center`}>
-                    <PieChartIcon className={`w-5 h-5 ${profitLoss >= 0 ? 'text-blue-600' : 'text-orange-600'} mb-1`} />
-                    <span className={`text-[10px] font-bold ${profitLoss >= 0 ? 'text-blue-600/70' : 'text-orange-600/70'} mb-1`}>الصافي</span>
-                    <span className={`text-sm font-black ${profitLoss >= 0 ? 'text-blue-700' : 'text-orange-700'} text-center break-all`}><FormattedNumber amount={profitLoss} /></span>
+                <div className="ios-list-group">
+                  <button 
+                    onClick={() => { setActiveTab('transactions'); onClose(); }}
+                    className="ios-list-item w-full"
+                  >
+                    <div className="flex items-center gap-3 w-full">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                        <ArrowUpRight className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <span className="font-bold text-sm text-gray-700 flex-1 text-right">الإيرادات</span>
+                      <span className="font-black text-sm text-emerald-700"><FormattedNumber value={totals.income} /></span>
+                    </div>
+                  </button>
+                  <button 
+                    onClick={() => { setActiveTab('transactions'); onClose(); }}
+                    className="ios-list-item w-full border-t border-black/5"
+                  >
+                    <div className="flex items-center gap-3 w-full">
+                      <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
+                        <ArrowDownLeft className="w-5 h-5 text-rose-600" />
+                      </div>
+                      <span className="font-bold text-sm text-gray-700 flex-1 text-right">المصاريف</span>
+                      <span className="font-black text-sm text-rose-700"><FormattedNumber value={totals.expense} /></span>
+                    </div>
+                  </button>
+                  <button 
+                    onClick={() => { setActiveTab('custody'); onClose(); }}
+                    className="ios-list-item w-full border-t border-black/5"
+                  >
+                    <div className="flex items-center gap-3 w-full">
+                      <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                        <Coins className="w-5 h-5 text-amber-600" />
+                      </div>
+                      <span className="font-bold text-sm text-gray-700 flex-1 text-right">العهدة</span>
+                      <span className="font-black text-sm text-amber-700"><FormattedNumber value={custodyTotal} /></span>
+                    </div>
+                  </button>
+                  <div className="ios-list-item w-full border-t border-black/5">
+                    <div className="flex items-center gap-3 w-full">
+                      <div className={`w-8 h-8 rounded-full ${profitLoss >= 0 ? 'bg-blue-100' : 'bg-orange-100'} flex items-center justify-center shrink-0`}>
+                        <PieChartIcon className={`w-5 h-5 ${profitLoss >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
+                      </div>
+                      <span className="font-bold text-sm text-gray-700 flex-1 text-right">الصافي</span>
+                      <span className={`font-black text-sm ${profitLoss >= 0 ? 'text-blue-700' : 'text-orange-700'}`}><FormattedNumber value={profitLoss} /></span>
+                    </div>
                   </div>
                 </div>
               </div>
