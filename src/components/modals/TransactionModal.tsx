@@ -173,17 +173,28 @@ export const TransactionModal = ({
                   <div>
                     <label className="block text-[10px] font-black text-gray-400 mb-1 tracking-widest uppercase">الفئة</label>
                     <div className="relative">
-                      <select 
+                      <input 
+                        type="text"
+                        list="categories-list"
                         required
-                        value={transaction.category}
-                        onChange={(e) => setTransaction({ ...transaction, category: e.target.value })}
-                        className="w-full bg-white border-2 border-gray-100 rounded-xl p-3 text-sm font-bold text-right focus:border-blue-500 transition-all outline-none appearance-none cursor-pointer"
-                      >
-                        <option value="">اختر الفئة...</option>
+                        value={transaction.category || transaction.newCategoryName || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const existingCat = categories.find(c => c.name === val);
+                          if (existingCat) {
+                            setTransaction({ ...transaction, category: val, isAddingNewCategory: false, newCategoryName: '' });
+                          } else {
+                            setTransaction({ ...transaction, category: '', isAddingNewCategory: true, newCategoryName: val });
+                          }
+                        }}
+                        className="w-full bg-white border-2 border-gray-100 rounded-xl p-3 text-sm font-bold text-right focus:border-blue-500 transition-all outline-none"
+                        placeholder="اختر أو اكتب فئة جديدة..."
+                      />
+                      <datalist id="categories-list">
                         {categories.filter(c => c.type === transaction.type || c.type === 'all').map(cat => (
-                          <option key={cat.id} value={cat.name}>{cat.name}</option>
+                          <option key={cat.id} value={cat.name} />
                         ))}
-                      </select>
+                      </datalist>
                     </div>
                   </div>
 

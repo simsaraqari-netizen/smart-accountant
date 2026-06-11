@@ -11,6 +11,7 @@ interface CategoryModalProps {
   setNewCategory: (cat: any) => void;
   onAddCategory: (e: React.FormEvent) => void;
   onDeleteCategory: (cat: any) => void;
+  onUpdateCategoryType?: (categoryId: string, newType: 'income' | 'expense') => void;
 }
 
 export const CategoryModal = ({
@@ -21,7 +22,8 @@ export const CategoryModal = ({
   newCategory,
   setNewCategory,
   onAddCategory,
-  onDeleteCategory
+  onDeleteCategory,
+  onUpdateCategoryType
 }: CategoryModalProps) => {
   return (
     <AnimatePresence>
@@ -49,16 +51,27 @@ export const CategoryModal = ({
               </button>
             </div>
             
-            <div className="p-4 max-h-[60vh] overflow-y-auto">
+            <div className="p-4 flex-1 overflow-y-auto">
               <div className="space-y-2 mb-6">
                 <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">الفئات الحالية</h4>
                 <div className="grid grid-cols-1 gap-2">
                   {categories.map(cat => (
                     <div key={cat.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-2xl border border-gray-100">
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${cat.type === 'income' ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
-                        <span className="text-sm font-bold text-gray-900">{cat.name}</span>
-                        <span className="text-[10px] text-gray-400">({cat.type === 'income' ? 'ايراد' : 'مصروف'})</span>
+                      <div className="flex items-center gap-2 flex-grow">
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${cat.type === 'income' ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
+                        <span className="text-sm font-bold text-gray-900 truncate max-w-[120px]">{cat.name}</span>
+                        {userRole === 'admin' && onUpdateCategoryType ? (
+                          <select 
+                            value={cat.type}
+                            onChange={(e) => onUpdateCategoryType(cat.id, e.target.value as 'income' | 'expense')}
+                            className="text-[10px] font-bold bg-white/40 backdrop-blur-md border border-white/20 rounded-lg p-1.5 focus:ring-2 focus:ring-emerald-500 outline-none appearance-none cursor-pointer"
+                          >
+                            <option value="income">ايراد</option>
+                            <option value="expense">مصروف</option>
+                          </select>
+                        ) : (
+                          <span className="text-[10px] text-gray-400">({cat.type === 'income' ? 'ايراد' : 'مصروف'})</span>
+                        )}
                       </div>
                       {userRole === 'admin' && (
                         <button 

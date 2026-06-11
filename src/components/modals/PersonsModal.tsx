@@ -64,7 +64,11 @@ export const PersonsModal = ({
                 </button>
               </div>
               
-              <div className="p-6 overflow-y-auto space-y-6">
+              <div className="flex-1 p-6 overflow-y-auto space-y-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="w-5 h-5 text-emerald-600" />
+                  <h4 className="text-sm font-black text-gray-900">الأشخاص والجهات</h4>
+                </div>
                 <div className="flex gap-2">
                   <input 
                     type="text"

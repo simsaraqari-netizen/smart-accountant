@@ -310,34 +310,11 @@ export default function App() {
 
   const generatePDFReport = async () => {
     setIsGeneratingPDF(true);
-    const reportElement = document.getElementById('pdf-report-template');
-    if (!reportElement) {
-      setIsGeneratingPDF(false);
-      return;
-    }
-
     try {
-      // Temporarily show the report for capturing
-      reportElement.style.display = 'block';
-      
-      const canvas = await html2canvas(reportElement, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`تقرير_مالي_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
-      
-      reportElement.style.display = 'none';
+      window.print();
     } catch (error) {
-      console.error('PDF Generation Error:', error);
+      console.error('Print Error:', error);
+      alert('فشل الطباعة أو التصدير.');
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -2968,6 +2945,13 @@ export default function App() {
               }
             }
           });
+        }}
+        onUpdateCategoryType={async (categoryId, newType) => {
+          try {
+            await updateDoc(doc(db, 'categories', categoryId), { type: newType });
+          } catch (err) {
+            handleFirestoreError(err, 'update', 'categories');
+          }
         }}
       />
       </AnimatePresence>

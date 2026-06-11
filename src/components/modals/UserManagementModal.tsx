@@ -71,7 +71,7 @@ export const UserManagementModal = ({
               </button>
             </div>
             
-            <div className="p-6 overflow-y-auto space-y-8">
+            <div className="flex-1 p-6 overflow-y-auto space-y-8">
               {/* Add New User Form */}
               <form onSubmit={handleCreateUser} className="bg-gray-50 p-6 rounded-2xl border border-gray-100 space-y-4">
                 <div className="flex items-center gap-2 mb-2">
