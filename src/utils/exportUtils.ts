@@ -7,9 +7,9 @@ export const exportTransactionsToExcel = (transactions: any[], fileName: string 
     let dateStr = '';
     try {
       if (tx.date && tx.date.seconds) {
-        dateStr = format(new Date(tx.date.seconds * 1000), 'yyyy/MM/dd HH:mm');
+        dateStr = format(new Date(tx.date.seconds * 1000), 'd/M/yyyy HH:mm');
       } else if (tx.date instanceof Date) {
-        dateStr = format(tx.date, 'yyyy/MM/dd HH:mm');
+        dateStr = format(tx.date, 'd/M/yyyy HH:mm');
       }
     } catch (e) {
       dateStr = 'تاريخ غير صالح';

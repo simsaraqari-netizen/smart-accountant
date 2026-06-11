@@ -144,7 +144,7 @@ export const RemindersModal: React.FC<RemindersModalProps> = ({ isOpen, onClose,
                             <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold text-gray-500 bg-gray-50 p-2 rounded-xl">
                               <span className={`flex items-center gap-1 ${isPast ? 'text-rose-600' : ''}`}>
                                 <Calendar className="w-3.5 h-3.5" /> 
-                                {format(dateObj, 'd MMMM yyyy', { locale: ar })}
+                                {format(dateObj, 'd/M/yyyy', { locale: ar })}
                               </span>
                               <span className={`flex items-center gap-1 ${isPast ? 'text-rose-600' : ''}`}>
                                 <Clock className="w-3.5 h-3.5" /> 

@@ -2759,7 +2759,7 @@ export default function App() {
                                   {format(tx.date.toDate(), "HH:mm")}
                                 </span>
                                 <span className="text-[10px] opacity-70">
-                                  {format(tx.date.toDate(), "yyyy/MM/dd")}
+                                  {format(tx.date.toDate(), "d/M/yyyy")}
                                 </span>
                               </div>
                             </td>
@@ -3031,7 +3031,7 @@ export default function App() {
                               {tx.description || tx.category}
                             </p>
                             <p className="text-[10px] text-gray-400">
-                              {format(tx.date.toDate(), "yyyy/MM/dd", {
+                              {format(tx.date.toDate(), "d/M/yyyy", {
                                 locale: ar,
                               })}
                             </p>

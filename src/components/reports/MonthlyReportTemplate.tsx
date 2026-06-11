@@ -49,9 +49,9 @@ export const MonthlyReportTemplate = ({ transactions, custodyAccounts }: Monthly
     .sort((a, b) => Number(b.amount || 0) - Number(a.amount || 0))
     .slice(0, 10);
 
-  const currentDate = new Intl.DateTimeFormat('ar-EG', {
+  const currentDate = new Intl.DateTimeFormat('en-GB', {
     year: 'numeric',
-    month: 'long',
+    month: 'numeric',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit'

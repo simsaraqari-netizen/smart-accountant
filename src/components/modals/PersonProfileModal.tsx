@@ -103,7 +103,7 @@ export const PersonProfileModal: React.FC<PersonProfileModalProps> = ({
             {/* Print Header */}
             <div className="hidden print:block text-center mb-8 border-b-2 border-gray-200 pb-4">
               <h1 className="text-2xl font-bold text-gray-900 mb-2">كشف حساب موظف</h1>
-              <p className="text-sm text-gray-500">تاريخ الإصدار: {format(new Date(), 'PPP', { locale: ar })}</p>
+              <p className="text-sm text-gray-500">تاريخ الإصدار: {format(new Date(), 'd/M/yyyy', { locale: ar })}</p>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 md:p-6 print:overflow-visible print:p-0">
@@ -173,7 +173,7 @@ export const PersonProfileModal: React.FC<PersonProfileModalProps> = ({
                           <div>
                             <p className="text-xs font-bold text-gray-900 mb-0.5 print:text-[11px]">{tx.description || tx.category}</p>
                             <p className="text-[10px] font-bold text-gray-400 flex items-center gap-2 print:text-[9px]">
-                              {format(tx.date.toDate(), 'PPP', { locale: ar })}
+                              {format(tx.date.toDate(), 'd/M/yyyy', { locale: ar })}
                               {tx.splitType === 'joint' && (
                                 <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-500">عملية مشتركة</span>
                               )}

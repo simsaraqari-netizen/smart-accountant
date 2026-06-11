@@ -65,7 +65,7 @@ export const LatestTransactionsList: React.FC<LatestTransactionsListProps> = ({
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       <p className="text-[10px] md:text-xs text-gray-500 font-semibold">
-                        {format(tx.date.toDate(), "d MMMM yyyy", { locale: ar })}
+                        {format(tx.date.toDate(), "d/M/yyyy", { locale: ar })}
                       </p>
                       {tx.splits && tx.splits.length > 0 && (
                         <div className="flex items-center gap-1">
