@@ -35,14 +35,14 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
         if (isNaN(amount)) amount = 0;
         
         // Direct transaction
-        if ((!tx.splitType || tx.splitType === 'individual') && tx.personName === person.name) {
+        if ((!tx.splitType || tx.splitType === 'individual') && tx.personName?.trim() === person?.name?.trim()) {
           if (tx.type === 'income' || tx.type === 'custody_in') totalIncome += amount;
           if (tx.type === 'expense' || tx.type === 'custody_out') totalExpense += amount;
         }
         
         // Joint transaction
         if (tx.splitType === 'joint' && tx.splits) {
-          const split = tx.splits.find((s: any) => s.personName === person.name);
+          const split = tx.splits.find((s: any) => s.personName?.trim() === person?.name?.trim());
           if (split) {
             let splitAmount = typeof split.amount === 'string' ? parseFloat(split.amount) : split.amount;
             if (isNaN(splitAmount)) splitAmount = 0;

@@ -34,14 +34,14 @@ export const PersonProfileModal: React.FC<PersonProfileModalProps> = ({
       if (isNaN(amount)) amount = 0;
 
       // Direct
-      if ((!tx.splitType || tx.splitType === 'individual') && tx.personName === person.name) {
+      if ((!tx.splitType || tx.splitType === 'individual') && tx.personName?.trim() === person?.name?.trim()) {
         isRelated = true;
         amountForPerson = amount;
       }
       
       // Joint
       if (tx.splitType === 'joint' && tx.splits) {
-        const split = tx.splits.find((s: any) => s.personName === person.name);
+        const split = tx.splits.find((s: any) => s.personName?.trim() === person?.name?.trim());
         if (split) {
           isRelated = true;
           amountForPerson = typeof split.amount === 'string' ? parseFloat(split.amount) : split.amount;
