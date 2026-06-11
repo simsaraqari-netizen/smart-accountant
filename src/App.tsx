@@ -117,6 +117,8 @@ import { TransactionModal } from './components/modals/TransactionModal';
 import { CategoryModal } from './components/modals/CategoryModal';
 import { UserManagementModal } from './components/modals/UserManagementModal';
 import { PersonsModal } from './components/modals/PersonsModal';
+import { PersonsDashboard } from './components/pages/PersonsDashboard';
+import { PersonProfileModal } from './components/modals/PersonProfileModal';
 
 // --- Error Handling ---
 const handleFirestoreError = (error: unknown, operationType: FirestoreErrorInfo['operationType'], path: string | null) => {
@@ -220,7 +222,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [custodyAccounts, setCustodyAccounts] = useState<CustodyAccount[]>([]);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'transactions' | 'custody'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'transactions' | 'custody' | 'persons'>('dashboard');
   const [filterType, setFilterType] = useState<TransactionType | 'all'>('all');
   const [showOnlyCustody, setShowOnlyCustody] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -2022,6 +2024,15 @@ export default function App() {
             <div className="flex items-center justify-center gap-2">
               <History className="w-4 h-4" />
               العمليات
+            </div>
+          </button>
+          <button 
+            onClick={() => setActiveTab('persons')}
+            className={`flex-1 py-2 rounded-xl text-sm font-black transition-all ${activeTab === 'persons' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <Users className="w-4 h-4" />
+              الأشخاص
             </div>
           </button>
         </div>
