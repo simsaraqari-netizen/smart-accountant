@@ -2666,11 +2666,30 @@ export default function App() {
                 <PersonsDashboard 
                   persons={persons}
                   transactions={transactions}
+                  userRole={userRole}
                   onOpenAddPerson={() => {
                     setEditingPerson(null);
                     setShowPersonsModal(true);
                   }}
                   onOpenPersonProfile={(person) => setSelectedPersonProfile(person)}
+                  onEditPerson={(person) => {
+                    setEditingPerson(person);
+                    setShowPersonsModal(true);
+                  }}
+                  onDeletePerson={(person) => {
+                    setConfirmDelete({
+                      isOpen: true,
+                      title: 'حذف شخص/جهة',
+                      message: `هل أنت متأكد من حذف ${person.name}؟ لا يمكن التراجع عن هذا الإجراء وسيتم حذف جميع عملياته.`,
+                      onConfirm: () => {
+                        const transactionsToDelete = transactions.filter(t => t.personName === person.name);
+                        setTransactions(prev => prev.filter(t => t.personName !== person.name));
+                        pushToHistory({ type: 'DELETE_PERSON', oldData: { ...person }, data: null });
+                        setPersons(prev => prev.filter(p => p.id !== person.id));
+                        showToast(`تم حذف ${person.name} وجميع معاملاته`, 'success');
+                      }
+                    });
+                  }}
                 />
               </Suspense>
             </motion.div>

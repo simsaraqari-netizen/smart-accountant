@@ -1,20 +1,26 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
-import { Users, UserPlus, ArrowUpRight, ArrowDownLeft, Wallet, Search } from 'lucide-react';
+import { Users, UserPlus, ArrowUpRight, ArrowDownLeft, Wallet, Search, Pencil, Trash2 } from 'lucide-react';
 import { FormattedNumber } from '../common/FormattedNumber';
 
 interface PersonsDashboardProps {
   persons: any[];
   transactions: any[];
+  userRole: string | null;
   onOpenAddPerson: () => void;
   onOpenPersonProfile: (person: any) => void;
+  onEditPerson: (person: any) => void;
+  onDeletePerson: (person: any) => void;
 }
 
 export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
   persons,
   transactions,
+  userRole,
   onOpenAddPerson,
-  onOpenPersonProfile
+  onOpenPersonProfile,
+  onEditPerson,
+  onDeletePerson
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -108,8 +114,34 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
               <h3 className="text-lg font-black text-gray-900 group-hover:text-blue-600 transition-colors">
                 {person.name}
               </h3>
-              <div className="p-2 bg-gray-50 rounded-lg group-hover:bg-blue-50 transition-colors">
-                <Users className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+              <div className="flex gap-1">
+                {userRole === 'admin' && (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditPerson(person);
+                      }}
+                      className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors z-10 relative"
+                      title="تعديل الموظف"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeletePerson(person);
+                      }}
+                      className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors z-10 relative"
+                      title="حذف الموظف"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+                <div className="p-2 bg-gray-50 rounded-lg group-hover:bg-blue-50 transition-colors z-0">
+                  <Users className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                </div>
               </div>
             </div>
 
