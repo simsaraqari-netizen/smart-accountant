@@ -34,6 +34,17 @@ export default defineConfig(({mode}) => {
         }
       })
     ],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'recharts': ['recharts'],
+            'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/messaging'],
+            'motion': ['motion/react'],
+          }
+        }
+      }
+    },
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
     },

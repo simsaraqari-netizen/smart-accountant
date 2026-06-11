@@ -2031,7 +2031,7 @@ export default function App() {
           >
             <div className="flex items-center justify-center gap-2">
               <Users className="w-4 h-4" />
-              الأشخاص
+              الموظفين والأشخاص
             </div>
           </button>
         </div>
@@ -2662,26 +2662,32 @@ export default function App() {
               exit={{ opacity: 0, x: -20 }}
               className="space-y-8"
             >
-              <PersonsDashboard 
-                persons={persons}
-                transactions={transactions}
-                onOpenAddPerson={() => {
-                  setEditingPerson(null);
-                  setShowPersonsModal(true);
-                }}
-                onOpenPersonProfile={(person) => setSelectedPersonProfile(person)}
-              />
+              <Suspense fallback={<div className="p-8 text-center text-gray-500 font-bold">جاري التحميل...</div>}>
+                <PersonsDashboard 
+                  persons={persons}
+                  transactions={transactions}
+                  onOpenAddPerson={() => {
+                    setEditingPerson(null);
+                    setShowPersonsModal(true);
+                  }}
+                  onOpenPersonProfile={(person) => setSelectedPersonProfile(person)}
+                />
+              </Suspense>
             </motion.div>
           )}
         </AnimatePresence>
       </main>
 
-      <PersonProfileModal 
-        isOpen={selectedPersonProfile !== null}
-        onClose={() => setSelectedPersonProfile(null)}
-        person={selectedPersonProfile}
-        transactions={transactions}
-      />
+      <Suspense fallback={null}>
+        {selectedPersonProfile && (
+          <PersonProfileModal 
+            isOpen={selectedPersonProfile !== null}
+            onClose={() => setSelectedPersonProfile(null)}
+            person={selectedPersonProfile}
+            transactions={transactions}
+          />
+        )}
+      </Suspense>
 
       <PersonsModal 
         isOpen={showPersonsModal}
