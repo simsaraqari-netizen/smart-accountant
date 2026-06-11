@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ChevronLeft, 
@@ -23,6 +23,37 @@ interface TransactionModalProps {
   onOpenAddCategory?: () => void;
   onOpenAddPerson?: () => void;
 }
+
+const DateInput = ({ value, onChange }: { value: string, onChange: (val: string) => void }) => {
+  const [isFocused, setIsFocused] = useState(false);
+  
+  const getDisplayValue = () => {
+    if (!value) return '';
+    try {
+      const parts = value.split('-');
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`; // DD/MM/YYYY
+      }
+      return value;
+    } catch {
+      return value;
+    }
+  };
+
+  return (
+    <input 
+      type={isFocused ? "date" : "text"} 
+      required
+      value={isFocused ? value : getDisplayValue()}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full bg-transparent border border-gray-200 rounded-xl p-3 text-sm outline-none focus:border-gray-500 transition-colors"
+      placeholder="يوم/شهر/سنة"
+      dir="ltr"
+    />
+  );
+};
 
 export const TransactionModal = ({
   mode,
@@ -271,12 +302,9 @@ export const TransactionModal = ({
 
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1.5">التاريخ</label>
-                    <input 
-                      type="date" 
-                      required
+                    <DateInput 
                       value={isAdd ? transaction.date : (transaction.date?.toDate ? transaction.date.toDate().toISOString().split('T')[0] : transaction.date)}
-                      onChange={(e) => setTransaction({ ...transaction, date: e.target.value })}
-                      className="w-full bg-transparent border border-gray-200 rounded-xl p-3 text-sm outline-none focus:border-gray-500 transition-colors"
+                      onChange={(val) => setTransaction({ ...transaction, date: val })}
                     />
                   </div>
 

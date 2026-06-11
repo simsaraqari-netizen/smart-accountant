@@ -34,7 +34,7 @@ export const PersonProfileModal: React.FC<PersonProfileModalProps> = ({
       if (isNaN(amount)) amount = 0;
 
       // Direct
-      if (tx.splitType === 'individual' && tx.personName === person.name) {
+      if ((!tx.splitType || tx.splitType === 'individual') && tx.personName === person.name) {
         isRelated = true;
         amountForPerson = amount;
       }

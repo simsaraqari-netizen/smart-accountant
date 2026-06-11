@@ -35,7 +35,7 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
         if (isNaN(amount)) amount = 0;
         
         // Direct transaction
-        if (tx.splitType === 'individual' && tx.personName === person.name) {
+        if ((!tx.splitType || tx.splitType === 'individual') && tx.personName === person.name) {
           if (tx.type === 'income' || tx.type === 'custody_in') totalIncome += amount;
           if (tx.type === 'expense' || tx.type === 'custody_out') totalExpense += amount;
         }
