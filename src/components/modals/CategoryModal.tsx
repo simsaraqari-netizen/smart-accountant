@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, Trash2 } from 'lucide-react';
+import { ChevronLeft, Trash2, Pencil, Check, X } from 'lucide-react';
 
 interface CategoryModalProps {
   isOpen: boolean;
@@ -12,6 +12,7 @@ interface CategoryModalProps {
   onAddCategory: (e: React.FormEvent) => void;
   onDeleteCategory: (cat: any) => void;
   onUpdateCategoryType?: (categoryId: string, newType: 'income' | 'expense') => void;
+  onUpdateCategoryName?: (categoryId: string, newName: string, newType: 'income' | 'expense') => void;
 }
 
 export const CategoryModal = ({
@@ -23,8 +24,34 @@ export const CategoryModal = ({
   setNewCategory,
   onAddCategory,
   onDeleteCategory,
-  onUpdateCategoryType
+  onUpdateCategoryType,
+  onUpdateCategoryName,
 }: CategoryModalProps) => {
+  const [editingCatId, setEditingCatId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editType, setEditType] = useState<'income' | 'expense'>('expense');
+
+  const startEdit = (cat: any) => {
+    setEditingCatId(cat.id);
+    setEditName(cat.name);
+    setEditType(cat.type);
+  };
+
+  const cancelEdit = () => {
+    setEditingCatId(null);
+    setEditName('');
+  };
+
+  const saveEdit = (cat: any) => {
+    if (!editName.trim()) return;
+    if (onUpdateCategoryName) {
+      onUpdateCategoryName(cat.id, editName.trim(), editType);
+    } else if (onUpdateCategoryType && editType !== cat.type) {
+      onUpdateCategoryType(cat.id, editType);
+    }
+    setEditingCatId(null);
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -53,33 +80,91 @@ export const CategoryModal = ({
             
             <div className="p-4 flex-1 overflow-y-auto">
               <div className="space-y-2 mb-6">
-                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">الفئات الحالية</h4>
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">الفئات الحالية</h4>
                 <div className="grid grid-cols-1 gap-2">
                   {categories.map(cat => (
-                    <div key={cat.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-2xl border border-gray-100">
-                      <div className="flex items-center gap-2 flex-grow">
-                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${cat.type === 'income' ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
-                        <span className="text-sm font-bold text-gray-900 truncate max-w-[120px]">{cat.name}</span>
-                        {userRole === 'admin' && onUpdateCategoryType ? (
-                          <select 
-                            value={cat.type}
-                            onChange={(e) => onUpdateCategoryType(cat.id, e.target.value as 'income' | 'expense')}
-                            className="text-[10px] font-bold bg-white/40 backdrop-blur-md border border-white/20 rounded-lg p-1.5 focus:ring-2 focus:ring-emerald-500 outline-none appearance-none cursor-pointer"
-                          >
-                            <option value="income">ايراد</option>
-                            <option value="expense">مصروف</option>
-                          </select>
-                        ) : (
-                          <span className="text-[10px] text-gray-400">({cat.type === 'income' ? 'ايراد' : 'مصروف'})</span>
-                        )}
-                      </div>
-                      {userRole === 'admin' && (
-                        <button 
-                          onClick={() => onDeleteCategory(cat)}
-                          className="text-rose-500 hover:text-rose-700 p-2 hover:bg-rose-50 rounded-2xl transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                    <div key={cat.id} className="bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden">
+                      
+                      {editingCatId === cat.id ? (
+                        /* --- Edit Mode --- */
+                        <div className="p-3 space-y-3">
+                          {/* Name Input */}
+                          <input
+                            type="text"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            autoFocus
+                            className="w-full bg-white border-2 border-emerald-300 rounded-xl p-2 text-sm font-bold text-right focus:outline-none focus:border-emerald-500"
+                            placeholder="اسم الفئة..."
+                          />
+
+                          {/* Type toggle */}
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setEditType('expense')}
+                              className={`p-2 rounded-xl border-2 font-bold text-xs transition-all ${editType === 'expense' ? 'border-rose-500 bg-rose-50 text-rose-600' : 'border-gray-100 text-gray-400 hover:border-gray-200'}`}
+                            >
+                              🔴 مصروف
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditType('income')}
+                              className={`p-2 rounded-xl border-2 font-bold text-xs transition-all ${editType === 'income' ? 'border-emerald-500 bg-emerald-50 text-emerald-600' : 'border-gray-100 text-gray-400 hover:border-gray-200'}`}
+                            >
+                              🟢 ايراد
+                            </button>
+                          </div>
+
+                          {/* Save / Cancel */}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => saveEdit(cat)}
+                              className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 text-white py-2 rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all"
+                            >
+                              <Check className="w-4 h-4" /> حفظ
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              className="flex-1 flex items-center justify-center gap-1.5 bg-gray-100 text-gray-600 py-2 rounded-xl font-bold text-sm hover:bg-gray-200 transition-all"
+                            >
+                              <X className="w-4 h-4" /> إلغاء
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        /* --- View Mode --- */
+                        <div className="flex items-center justify-between p-3">
+                          <div className="flex items-center gap-2 flex-grow min-w-0">
+                            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${cat.type === 'income' ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
+                            <span className="text-sm font-bold text-gray-900 truncate">{cat.name}</span>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
+                              cat.type === 'income' 
+                                ? 'bg-emerald-50 text-emerald-600' 
+                                : 'bg-rose-50 text-rose-600'
+                            }`}>
+                              {cat.type === 'income' ? 'ايراد' : 'مصروف'}
+                            </span>
+                          </div>
+                          {userRole === 'admin' && (
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <button
+                                onClick={() => startEdit(cat)}
+                                className="text-blue-500 hover:text-blue-700 p-2 hover:bg-blue-50 rounded-2xl transition-colors"
+                                title="تعديل"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => onDeleteCategory(cat)}
+                                className="text-rose-500 hover:text-rose-700 p-2 hover:bg-rose-50 rounded-2xl transition-colors"
+                                title="حذف"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   ))}

@@ -2991,6 +2991,14 @@ export default function App() {
             handleFirestoreError(err, 'update', 'categories');
           }
         }}
+        onUpdateCategoryName={async (categoryId, newName, newType) => {
+          try {
+            await updateDoc(doc(db, 'categories', categoryId), { name: newName, type: newType });
+            showToast('تم تحديث الفئة بنجاح', 'success');
+          } catch (err) {
+            handleFirestoreError(err, 'update', 'categories');
+          }
+        }}
       />
       </AnimatePresence>
       <AnimatePresence>
