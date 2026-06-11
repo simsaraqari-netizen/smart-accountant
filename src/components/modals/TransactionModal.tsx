@@ -49,14 +49,17 @@ export const TransactionModal = ({
     const newSplits = [...(transaction.splits || [])];
     newSplits[index] = { ...newSplits[index], [field]: value };
     
-    const txAmount = parseFloat(transaction.amount) || 0;
+    const cleanValue = typeof value === 'string' ? value.replace(/,/g, '.').replace(/٫/g, '.') : value;
+    const val = parseFloat(cleanValue) || 0;
+    
+    const txAmount = parseFloat(transaction.amount?.toString().replace(/,/g, '.').replace(/٫/g, '.')) || 0;
     
     if (field === 'percentage' && txAmount > 0) {
-      const val = typeof value === 'string' ? parseFloat(value) : value;
-      newSplits[index].amount = parseFloat(((txAmount * (val || 0)) / 100).toFixed(3));
+      const newAmount = (txAmount * val) / 100;
+      newSplits[index].amount = newAmount === 0 ? '' : parseFloat(newAmount.toFixed(3));
     } else if (field === 'amount' && txAmount > 0) {
-      const val = typeof value === 'string' ? parseFloat(value) : value;
-      newSplits[index].percentage = parseFloat((((val || 0) / txAmount) * 100).toFixed(2));
+      const newPercentage = (val / txAmount) * 100;
+      newSplits[index].percentage = newPercentage === 0 ? '' : parseFloat(newPercentage.toFixed(2));
     }
     
     setTransaction({ ...transaction, splits: newSplits });
@@ -99,16 +102,13 @@ export const TransactionModal = ({
                 <h3 className={`text-xl font-black ${isAdd ? 'text-emerald-700' : 'text-blue-700'} tracking-tight`}>
                   {isAdd ? 'إضافة عملية جديدة' : 'تعديل العملية'}
                 </h3>
-                <p className={`text-[10px] font-bold ${isAdd ? 'text-emerald-600/60' : 'text-blue-600/60'} uppercase tracking-widest mt-1`}>
-                  {isAdd ? 'تسجيل معاملة مالية جديدة' : 'تحديث بيانات المعاملة المالية'}
-                </p>
               </div>
               <button onClick={onClose} className="p-2 hover:bg-rose-50 rounded-lg text-gray-400 hover:text-rose-500 transition-all duration-300 active:scale-90">
                 <ChevronLeft className="w-6 h-6" />
               </button>
             </div>
 
-            <form onSubmit={onSubmit} className="p-4 space-y-3 overflow-y-auto custom-scrollbar flex-1">
+            <form onSubmit={onSubmit} className="p-3 space-y-2 overflow-y-auto custom-scrollbar flex-1">
               {formStatus.message && (
                 <motion.div 
                   initial={{ opacity: 0, y: -10 }}
@@ -129,11 +129,7 @@ export const TransactionModal = ({
               )}
 
               {/* Amount and Type Section */}
-              <div className="bg-gray-50/50 p-4 rounded-2xl border border-gray-100 space-y-4">
-                <div className="text-center mb-2">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">المبلغ والنوع</span>
-                </div>
-                
+              <div className="space-y-3">
                 <div className="relative">
                   <input 
                     type="number" 
@@ -178,7 +174,7 @@ export const TransactionModal = ({
 
               {/* Basic Info Section */}
               <CollapsibleSection title="المعلومات الأساسية" icon={FileText} defaultExpanded={true} isActive={true} color="blue">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   <div>
                     <div className="flex justify-between items-center mb-1">
                       <label className="block text-[10px] font-black text-gray-400 tracking-widest uppercase">الفئة</label>
@@ -261,9 +257,9 @@ export const TransactionModal = ({
                 isActive={transaction.isCustodyLinked} 
                 color="blue"
               >
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-2 bg-blue-50/50 rounded-xl border border-blue-100">
-                    <span className="text-xs font-bold text-blue-700">تفعيل الربط بالعهدة</span>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-1 border-b border-gray-100">
+                    <span className="text-xs font-bold text-gray-700">تفعيل الربط بالعهدة</span>
                     <button 
                       type="button"
                       onClick={() => setTransaction({ ...transaction, isCustodyLinked: !transaction.isCustodyLinked })}
@@ -343,9 +339,8 @@ export const TransactionModal = ({
                 isActive={transaction.splits && transaction.splits.length > 0} 
                 color="blue"
               >
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <p className="text-[10px] font-bold text-gray-400">تقسيم العملية على عدة أشخاص</p>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center mb-1">
                     <button 
                       type="button"
                       onClick={addSplit}
@@ -362,7 +357,7 @@ export const TransactionModal = ({
                         key={index}
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 space-y-3 relative group"
+                        className="p-2 rounded-lg border border-gray-100 space-y-2 relative group"
                       >
                         <button 
                           type="button"
@@ -375,22 +370,24 @@ export const TransactionModal = ({
                         <div className="grid grid-cols-3 gap-2">
                           <div>
                             <label className="block text-[8px] font-black text-gray-400 mb-1 tracking-widest uppercase">الموظف</label>
-                            <input 
-                              type="text" 
-                              list="persons-list"
+                            <select 
                               required
-                              value={split.personName}
+                              value={split.personName || ''}
                               onChange={(e) => handleSplitChange(index, 'personName', e.target.value)}
-                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs font-bold text-right outline-none focus:border-blue-400"
-                              placeholder="اسم الموظف..."
-                            />
+                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs font-bold text-right outline-none focus:border-blue-400 appearance-none"
+                            >
+                              <option value="" disabled>اختر الموظف...</option>
+                              {persons.map(p => (
+                                <option key={p.id} value={p.name}>{p.name}</option>
+                              ))}
+                            </select>
                           </div>
                           <div>
                             <label className="block text-[8px] font-black text-gray-400 mb-1 tracking-widest uppercase">النسبة (%)</label>
                             <input 
-                              type="number" 
+                              type="text" 
                               required
-                              value={split.percentage}
+                              value={split.percentage === 0 && split.amount === 0 ? '' : split.percentage}
                               onChange={(e) => handleSplitChange(index, 'percentage', e.target.value)}
                               className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs font-bold text-right outline-none focus:border-blue-400"
                               placeholder="0"
@@ -399,10 +396,9 @@ export const TransactionModal = ({
                           <div>
                             <label className="block text-[8px] font-black text-gray-400 mb-1 tracking-widest uppercase">المبلغ</label>
                             <input 
-                              type="number" 
-                              step="0.001"
+                              type="text" 
                               required
-                              value={split.amount}
+                              value={split.amount === 0 && split.percentage === 0 ? '' : split.amount}
                               onChange={(e) => handleSplitChange(index, 'amount', e.target.value)}
                               className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs font-bold text-right outline-none focus:border-blue-400"
                               placeholder="0.000"
@@ -428,11 +424,11 @@ export const TransactionModal = ({
                 </div>
               </CollapsibleSection>
 
-              <div className="pt-6">
+              <div className="pt-2">
                 <button 
                   type="submit"
                   disabled={formStatus.type === 'loading'}
-                  className={`w-full py-4 rounded-2xl font-black text-base shadow-xl transition-all duration-300 disabled:opacity-50 active:scale-[0.98] ${
+                  className={`w-full py-3 rounded-xl font-black text-sm shadow-md transition-all duration-300 disabled:opacity-50 active:scale-[0.98] ${
                     isAdd 
                       ? 'bg-emerald-600 text-white shadow-emerald-200 hover:bg-emerald-700' 
                       : 'bg-blue-600 text-white shadow-blue-200 hover:bg-blue-700'
