@@ -49,9 +49,14 @@ export const TransactionModal = ({
     const newSplits = [...(transaction.splits || [])];
     newSplits[index] = { ...newSplits[index], [field]: value };
     
-    // Auto-calculate amount if percentage changes
-    if (field === 'percentage' && transaction.amount) {
-      newSplits[index].amount = (parseFloat(transaction.amount) * value) / 100;
+    const txAmount = parseFloat(transaction.amount) || 0;
+    
+    if (field === 'percentage' && txAmount > 0) {
+      const val = typeof value === 'string' ? parseFloat(value) : value;
+      newSplits[index].amount = parseFloat(((txAmount * (val || 0)) / 100).toFixed(3));
+    } else if (field === 'amount' && txAmount > 0) {
+      const val = typeof value === 'string' ? parseFloat(value) : value;
+      newSplits[index].percentage = parseFloat((((val || 0) / txAmount) * 100).toFixed(2));
     }
     
     setTransaction({ ...transaction, splits: newSplits });
@@ -136,7 +141,7 @@ export const TransactionModal = ({
                     required
                     value={transaction.amount}
                     onChange={(e) => setTransaction({ ...transaction, amount: e.target.value })}
-                    className="w-full bg-white border-2 border-gray-100 rounded-2xl p-5 text-3xl font-black text-center text-gray-900 focus:border-blue-500 transition-all outline-none placeholder:text-gray-200"
+                    className="w-full bg-white border-2 border-gray-100 rounded-xl p-3 text-2xl font-black text-center text-gray-900 focus:border-blue-500 transition-all outline-none placeholder:text-gray-200"
                     placeholder="0.000"
                     autoFocus
                   />
@@ -147,25 +152,25 @@ export const TransactionModal = ({
                   <button 
                     type="button"
                     onClick={() => setTransaction({ ...transaction, type: 'expense' })}
-                    className={`flex items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-300 font-black text-sm ${
+                    className={`flex items-center justify-center gap-1 p-2.5 rounded-lg border-2 transition-all duration-300 font-black text-xs ${
                       transaction.type === 'expense' 
-                        ? 'bg-rose-50 border-rose-500 text-rose-600 shadow-lg shadow-rose-100' 
+                        ? 'bg-rose-50 border-rose-500 text-rose-600 shadow-sm shadow-rose-100' 
                         : 'bg-white border-gray-100 text-gray-400 hover:border-gray-200'
                     }`}
                   >
-                    <ArrowDownLeft className="w-5 h-5" />
+                    <ArrowDownLeft className="w-4 h-4" />
                     مصروف
                   </button>
                   <button 
                     type="button"
                     onClick={() => setTransaction({ ...transaction, type: 'income' })}
-                    className={`flex items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-300 font-black text-sm ${
+                    className={`flex items-center justify-center gap-1 p-2.5 rounded-lg border-2 transition-all duration-300 font-black text-xs ${
                       transaction.type === 'income' 
-                        ? 'bg-emerald-50 border-emerald-500 text-emerald-600 shadow-lg shadow-emerald-100' 
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-600 shadow-sm shadow-emerald-100' 
                         : 'bg-white border-gray-100 text-gray-400 hover:border-gray-200'
                     }`}
                   >
-                    <ArrowUpRight className="w-5 h-5" />
+                    <ArrowUpRight className="w-4 h-4" />
                     إيراد
                   </button>
                 </div>
@@ -173,7 +178,7 @@ export const TransactionModal = ({
 
               {/* Basic Info Section */}
               <CollapsibleSection title="المعلومات الأساسية" icon={FileText} defaultExpanded={true} isActive={true} color="blue">
-                <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <div className="flex justify-between items-center mb-1">
                       <label className="block text-[10px] font-black text-gray-400 tracking-widest uppercase">الفئة</label>
@@ -198,7 +203,7 @@ export const TransactionModal = ({
                             setTransaction({ ...transaction, category: '', isAddingNewCategory: true, newCategoryName: val });
                           }
                         }}
-                        className="w-full bg-white border-2 border-gray-100 rounded-xl p-3 text-sm font-bold text-right focus:border-blue-500 transition-all outline-none"
+                        className="w-full bg-white border-2 border-gray-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none"
                         placeholder="اختر أو اكتب فئة جديدة..."
                       />
                       <datalist id="categories-list">
@@ -223,7 +228,7 @@ export const TransactionModal = ({
                       list="persons-list"
                       value={transaction.personName}
                       onChange={(e) => setTransaction({ ...transaction, personName: e.target.value })}
-                      className="w-full bg-white border-2 border-gray-100 rounded-xl p-3 text-sm font-bold text-right focus:border-blue-500 transition-all outline-none"
+                      className="w-full bg-white border-2 border-gray-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none"
                       placeholder="اسم الموظف (اختياري)..."
                     />
                     <datalist id="persons-list">
@@ -239,18 +244,18 @@ export const TransactionModal = ({
                         required
                         value={isAdd ? transaction.date : (transaction.date?.toDate ? transaction.date.toDate().toISOString().split('T')[0] : transaction.date)}
                         onChange={(e) => setTransaction({ ...transaction, date: e.target.value })}
-                        className="w-full bg-white border-2 border-gray-100 rounded-xl p-3 text-sm font-bold text-right focus:border-blue-500 transition-all outline-none shadow-sm"
+                        className="w-full bg-white border-2 border-gray-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none shadow-sm"
                       />
                     </div>
                   </div>
 
-                  <div>
+                  <div className="col-span-2">
                     <label className="block text-[10px] font-black text-gray-400 mb-1 tracking-widest uppercase">الوصف</label>
                     <textarea 
                       value={transaction.description}
                       onChange={(e) => setTransaction({ ...transaction, description: e.target.value })}
-                      rows={2}
-                      className="w-full bg-white border-2 border-gray-100 rounded-xl p-3 text-sm font-bold text-right focus:border-blue-500 transition-all outline-none resize-none"
+                      rows={1}
+                      className="w-full bg-white border-2 border-gray-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none resize-none"
                       placeholder="ملاحظات إضافية..."
                     />
                   </div>
@@ -288,7 +293,7 @@ export const TransactionModal = ({
                           required={transaction.isCustodyLinked}
                           value={transaction.custodyAccountId}
                           onChange={(e) => setTransaction({ ...transaction, custodyAccountId: e.target.value })}
-                          className="w-full bg-white border-2 border-blue-100 rounded-xl p-3 text-sm font-bold text-right focus:border-blue-500 transition-all outline-none"
+                          className="w-full bg-white border-2 border-blue-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none"
                         >
                           <option value="">اختر الحساب...</option>
                           {custodyAccounts.map(acc => (
@@ -330,7 +335,7 @@ export const TransactionModal = ({
                           required={transaction.isCustodyLinked}
                           value={transaction.custodyAmount}
                           onChange={(e) => setTransaction({ ...transaction, custodyAmount: e.target.value })}
-                          className="w-full bg-white border-2 border-blue-100 rounded-xl p-3 text-sm font-bold text-right focus:border-blue-500 transition-all outline-none"
+                          className="w-full bg-white border-2 border-blue-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none"
                           placeholder="اتركه فارغاً ليساوي مبلغ العملية"
                         />
                       </div>
@@ -375,7 +380,7 @@ export const TransactionModal = ({
                           <Trash2 className="w-3 h-3" />
                         </button>
 
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-3 gap-2">
                           <div>
                             <label className="block text-[8px] font-black text-gray-400 mb-1 tracking-widest uppercase">الموظف</label>
                             <input 
@@ -384,7 +389,7 @@ export const TransactionModal = ({
                               required
                               value={split.personName}
                               onChange={(e) => handleSplitChange(index, 'personName', e.target.value)}
-                              className="w-full bg-white border border-gray-200 rounded-lg p-2 text-xs font-bold text-right outline-none focus:border-blue-400"
+                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs font-bold text-right outline-none focus:border-blue-400"
                               placeholder="اسم الموظف..."
                             />
                           </div>
@@ -394,23 +399,23 @@ export const TransactionModal = ({
                               type="number" 
                               required
                               value={split.percentage}
-                              onChange={(e) => handleSplitChange(index, 'percentage', parseFloat(e.target.value))}
-                              className="w-full bg-white border border-gray-200 rounded-lg p-2 text-xs font-bold text-right outline-none focus:border-blue-400"
+                              onChange={(e) => handleSplitChange(index, 'percentage', e.target.value)}
+                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs font-bold text-right outline-none focus:border-blue-400"
                               placeholder="0"
                             />
                           </div>
-                        </div>
-                        <div>
-                          <label className="block text-[8px] font-black text-gray-400 mb-1 tracking-widest uppercase">المبلغ</label>
-                          <input 
-                            type="number" 
-                            step="0.001"
-                            required
-                            value={split.amount}
-                            onChange={(e) => handleSplitChange(index, 'amount', parseFloat(e.target.value))}
-                            className="w-full bg-white border border-gray-200 rounded-lg p-2 text-xs font-bold text-right outline-none focus:border-blue-400"
-                            placeholder="0.000"
-                          />
+                          <div>
+                            <label className="block text-[8px] font-black text-gray-400 mb-1 tracking-widest uppercase">المبلغ</label>
+                            <input 
+                              type="number" 
+                              step="0.001"
+                              required
+                              value={split.amount}
+                              onChange={(e) => handleSplitChange(index, 'amount', e.target.value)}
+                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs font-bold text-right outline-none focus:border-blue-400"
+                              placeholder="0.000"
+                            />
+                          </div>
                         </div>
                       </motion.div>
                     ))}

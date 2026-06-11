@@ -127,6 +127,11 @@ import { UserManagementModal } from "./components/modals/UserManagementModal";
 import { PersonsModal } from "./components/modals/PersonsModal";
 import { MonthlyReportTemplate } from "./components/reports/MonthlyReportTemplate";
 import { BudgetDashboard } from "./components/pages/BudgetDashboard";
+import { DashboardMenu, DashboardViewType } from "./components/dashboard/DashboardMenu";
+import { FinancialFlowAnalysis } from "./components/dashboard/FinancialFlowAnalysis";
+import { ExpenseDistribution } from "./components/dashboard/ExpenseDistribution";
+import { PeopleSummary } from "./components/dashboard/PeopleSummary";
+import { LatestTransactionsList } from "./components/dashboard/LatestTransactionsList";
 const PersonsDashboard = lazy(() =>
   import("./components/pages/PersonsDashboard").then((m) => ({
     default: m.PersonsDashboard,
@@ -253,6 +258,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<
     "dashboard" | "transactions" | "custody" | "persons"
   >("dashboard");
+  const [dashboardView, setDashboardView] = useState<DashboardViewType>("menu");
   const [filterType, setFilterType] = useState<TransactionType | "all">("all");
   const [showOnlyCustody, setShowOnlyCustody] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -2510,476 +2516,79 @@ export default function App() {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-4"
               >
-                <BudgetDashboard
-                  categories={categories}
-                  transactions={transactions}
-                  currentMonth={new Date()}
-                />
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {/* Financial Flow Analysis */}
-                  <div
-                    className="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex flex-col cursor-pointer hover:border-emerald-200 transition-all"
-                    onClick={() => {
-                      setFilterType("all");
-                      setShowOnlyCustody(false);
-                      setActiveTab("transactions");
-                    }}
-                  >
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="w-10"></div>
-                      <h3 className="text-[12px] font-black text-emerald-600 text-center">
-                        تحليل التدفق المالي
-                      </h3>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setFilterType("all");
-                          setShowOnlyCustody(false);
-                          setActiveTab("transactions");
-                        }}
-                        className="text-emerald-600 text-[9px] font-semibold hover:underline"
+                {dashboardView === 'menu' && (
+                  <DashboardMenu onSelectView={setDashboardView} />
+                )}
+                
+                {dashboardView !== 'menu' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                      <button 
+                        onClick={() => setDashboardView('menu')}
+                        className="p-2 hover:bg-gray-100 rounded-xl text-gray-500 hover:text-gray-900 transition-colors active:scale-95"
                       >
-                        عرض الكل
+                        <ChevronRight className="w-5 h-5" />
                       </button>
+                      <h2 className="text-lg font-black text-gray-900">
+                        {dashboardView === 'budget' && 'الميزانية العامة'}
+                        {dashboardView === 'flow' && 'تحليل التدفق المالي'}
+                        {dashboardView === 'monthly' && 'التقرير الشهري'}
+                        {dashboardView === 'income' && 'توزيع الإيرادات'}
+                        {dashboardView === 'expense' && 'توزيع المصاريف'}
+                        {dashboardView === 'people' && 'ملخص الموظفين'}
+                        {dashboardView === 'latest' && 'آخر العمليات'}
+                      </h2>
                     </div>
-                    <div className="h-[100px] w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={[
-                            {
-                              name: "ايرادات",
-                              value: totals.income,
-                              label: `${totals.income.toLocaleString("en-US")} د.ك`,
-                            },
-                            {
-                              name: "مصاريف",
-                              value: totals.expense,
-                              label: `${totals.expense.toLocaleString("en-US")} د.ك`,
-                            },
-                            {
-                              name: "عهدة",
-                              value: custodyTotal,
-                              label: `${custodyTotal.toLocaleString("en-US")} د.ك`,
-                            },
-                          ]}
-                          margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
-                        >
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            vertical={false}
-                            stroke="#F1F5F9"
-                          />
-                          <XAxis
-                            dataKey="name"
-                            axisLine={false}
-                            tickLine={false}
-                            tick={(props: any) => {
-                              const { x, y, payload } = props;
-                              const item = [
-                                {
-                                  name: "ايرادات",
-                                  label: `${totals.income.toLocaleString("en-US")} د.ك`,
-                                },
-                                {
-                                  name: "مصاريف",
-                                  label: `${totals.expense.toLocaleString("en-US")} د.ك`,
-                                },
-                                {
-                                  name: "عهدة",
-                                  label: `${custodyTotal.toLocaleString("en-US")} د.ك`,
-                                },
-                              ].find((d) => d.name === payload.value);
 
-                              return (
-                                <g transform={`translate(${x},${y})`}>
-                                  <text
-                                    x={0}
-                                    y={10}
-                                    dy={0}
-                                    textAnchor="middle"
-                                    fill="#64748B"
-                                    fontSize={10}
-                                    fontWeight="bold"
-                                  >
-                                    {payload.value}
-                                  </text>
-                                  <text
-                                    x={0}
-                                    y={22}
-                                    dy={0}
-                                    textAnchor="middle"
-                                    fill="#94A3B8"
-                                    fontSize={9}
-                                  >
-                                    {item?.label}
-                                  </text>
-                                </g>
-                              );
-                            }}
-                          />
-                          <YAxis hide domain={[0, "auto"]} />
-                          <Tooltip
-                            cursor={{ fill: "#F8FAFC" }}
-                            contentStyle={{
-                              borderRadius: "8px",
-                              border: "none",
-                              boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                              fontSize: "10px",
-                            }}
-                          />
-                          <Bar
-                            dataKey="value"
-                            radius={[4, 4, 0, 0]}
-                            barSize={40}
-                          >
-                            <Cell fill="#10B981" />
-                            <Cell fill="#F43F5E" />
-                            <Cell fill="#F59E0B" />
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-
-                  <div className="lg:col-span-2">
-                    <MonthlyReport
-                      transactions={transactions}
-                      onClick={() => {
-                        setFilterType("expense");
-                        setActiveTab("transactions");
-                      }}
-                    />
-                  </div>
-
-                  {/* Income Distribution Chart */}
-                  <IncomeReport
-                    transactions={transactions}
-                    onClick={() => {
-                      setFilterType("income");
-                      setActiveTab("transactions");
-                    }}
-                  />
-
-                  {/* Latest Transactions */}
-                  <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100">
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="w-10"></div> {/* Spacer for symmetry */}
-                      <h3 className="text-sm font-black text-emerald-600">
-                        آخر العمليات
-                      </h3>
-                      <button
+                    {dashboardView === 'budget' && (
+                      <BudgetDashboard
+                        categories={categories}
+                        transactions={transactions}
+                        currentMonth={new Date()}
+                      />
+                    )}
+                    {dashboardView === 'flow' && (
+                      <FinancialFlowAnalysis totals={totals} custodyTotal={custodyTotal} />
+                    )}
+                    {dashboardView === 'monthly' && (
+                      <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100">
+                        <MonthlyReport
+                          transactions={transactions}
+                          onClick={() => {
+                            setFilterType("expense");
+                            setActiveTab("transactions");
+                          }}
+                        />
+                      </div>
+                    )}
+                    {dashboardView === 'income' && (
+                      <IncomeReport
+                        transactions={transactions}
                         onClick={() => {
+                          setFilterType("income");
+                          setActiveTab("transactions");
+                        }}
+                      />
+                    )}
+                    {dashboardView === 'expense' && (
+                      <ExpenseDistribution transactions={filteredTransactionsList} />
+                    )}
+                    {dashboardView === 'people' && (
+                      <PeopleSummary transactions={filteredTransactionsList} />
+                    )}
+                    {dashboardView === 'latest' && (
+                      <LatestTransactionsList
+                        transactions={filteredTransactionsList}
+                        custodyAccounts={custodyAccounts}
+                        onViewAll={() => {
                           setFilterType("all");
                           setShowOnlyCustody(false);
                           setActiveTab("transactions");
                         }}
-                        className="text-emerald-600 text-[10px] font-semibold hover:underline"
-                      >
-                        عرض الكل
-                      </button>
-                    </div>
-                    <div className="space-y-1">
-                      {filteredTransactionsList.slice(0, 4).map((tx) => {
-                        const custodyAccount = tx.custodyAccountId
-                          ? custodyAccounts.find(
-                              (acc) => acc.id === tx.custodyAccountId,
-                            )
-                          : null;
-                        return (
-                          <div
-                            key={tx.id}
-                            className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-full transition-colors border border-transparent"
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <div
-                                className={`p-1.5 rounded-full ${
-                                  tx.type === "income"
-                                    ? "bg-emerald-100 text-emerald-600"
-                                    : tx.type === "expense"
-                                      ? "bg-rose-100 text-rose-600"
-                                      : "bg-amber-100 text-amber-600"
-                                }`}
-                              >
-                                {tx.type === "income" ? (
-                                  <ArrowUpRight className="w-3 h-3" />
-                                ) : (
-                                  <ArrowDownLeft className="w-3 h-3" />
-                                )}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="font-bold text-gray-900 text-xs truncate">
-                                  {tx.category}
-                                </p>
-                                <div className="flex items-center gap-1">
-                                  <p className="text-[9px] text-gray-500">
-                                    {format(tx.date.toDate(), "d MMM", {
-                                      locale: ar,
-                                    })}
-                                  </p>
-                                  {tx.splits && tx.splits.length > 0 && (
-                                    <div className="flex items-center gap-1">
-                                      <span className="text-[8px] bg-emerald-50 text-emerald-600 px-1 rounded-full font-bold">
-                                        مقسم
-                                      </span>
-                                      <div className="flex gap-1 overflow-hidden">
-                                        {tx.splits
-                                          .slice(0, 2)
-                                          .map((s: any, i: number) => (
-                                            <span
-                                              key={i}
-                                              className="text-[7px] text-gray-400 whitespace-nowrap"
-                                            >
-                                              {s.personName} (
-                                              {s.percentage?.toFixed(0)}%)
-                                            </span>
-                                          ))}
-                                        {tx.splits.length > 2 && (
-                                          <span className="text-[7px] text-gray-400">
-                                            ...
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              {custodyAccount && (
-                                <div className="relative group/custody-dash">
-                                  <Coins className="w-3 h-3 text-amber-500 cursor-help" />
-                                  <div className="absolute bottom-full right-0 mb-1 hidden group-hover/custody-dash:block bg-gray-900 text-white text-[9px] px-2 py-1 rounded whitespace-nowrap z-50 shadow-lg border border-white/10">
-                                    عهدة: {custodyAccount.name}
-                                  </div>
-                                </div>
-                              )}
-                              <p
-                                className={`font-bold text-xs shrink-0 flex items-center gap-1 ${tx.type === "income" ? "text-emerald-600" : "text-rose-600"}`}
-                              >
-                                <FormattedNumber value={tx.amount} />
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                      />
+                    )}
                   </div>
-
-                  {/* Expense Distribution */}
-                  <div
-                    className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:border-emerald-200 transition-all"
-                    onClick={() => {
-                      setFilterType("expense");
-                      setActiveTab("transactions");
-                    }}
-                  >
-                    <div className="flex justify-between items-center mb-3">
-                      <div className="w-10"></div>
-                      <h3 className="text-sm font-black text-emerald-600 text-center">
-                        توزيع المصاريف
-                      </h3>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setFilterType("expense");
-                          setActiveTab("transactions");
-                        }}
-                        className="text-emerald-600 text-[10px] font-semibold hover:underline"
-                      >
-                        عرض الكل
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between h-[140px]">
-                      {/* Legend (Left/Center) */}
-                      <div className="flex-1 space-y-2 overflow-y-auto max-h-full pr-2">
-                        {(() => {
-                          const expenseData = filteredTransactionsList
-                            .filter((t) => t.type === "expense")
-                            .reduce((acc: any[], t) => {
-                              const existing = acc.find(
-                                (x) => x.name === t.category,
-                              );
-                              if (existing) existing.value += t.amount;
-                              else
-                                acc.push({ name: t.category, value: t.amount });
-                              return acc;
-                            }, []);
-                          const colors = [
-                            "#10B981",
-                            "#3B82F6",
-                            "#F59E0B",
-                            "#F43F5E",
-                            "#8B5CF6",
-                          ];
-
-                          return expenseData.map((item, index) => (
-                            <div
-                              key={item.name}
-                              className="flex items-center gap-2"
-                            >
-                              <div
-                                className="w-2 h-2 rounded-full shrink-0"
-                                style={{
-                                  backgroundColor:
-                                    colors[index % colors.length],
-                                }}
-                              ></div>
-                              <span className="text-[10px] font-bold text-gray-700 truncate">
-                                {item.name}
-                              </span>
-                              <span className="text-[9px] text-gray-400 mr-auto">
-                                {item.value.toLocaleString("en-US")}
-                              </span>
-                            </div>
-                          ));
-                        })()}
-                      </div>
-
-                      {/* Chart (Right) */}
-                      <div className="w-[120px] h-full shrink-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={filteredTransactionsList
-                                .filter((t) => t.type === "expense")
-                                .reduce((acc: any[], t) => {
-                                  const existing = acc.find(
-                                    (x) => x.name === t.category,
-                                  );
-                                  if (existing) existing.value += t.amount;
-                                  else
-                                    acc.push({
-                                      name: t.category,
-                                      value: t.amount,
-                                    });
-                                  return acc;
-                                }, [])}
-                              innerRadius={35}
-                              outerRadius={50}
-                              paddingAngle={5}
-                              dataKey="value"
-                              stroke="none"
-                            >
-                              {[
-                                "#10B981",
-                                "#3B82F6",
-                                "#F59E0B",
-                                "#F43F5E",
-                                "#8B5CF6",
-                              ].map((color, index) => (
-                                <Cell key={`cell-${index}`} fill={color} />
-                              ))}
-                            </Pie>
-                            <Tooltip
-                              contentStyle={{
-                                fontSize: "9px",
-                                borderRadius: "8px",
-                                border: "none",
-                              }}
-                            />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* People Summary */}
-                  <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                    <div className="flex justify-between items-center mb-3">
-                      <div className="w-10"></div>
-                      <h3 className="text-sm font-black text-emerald-600 text-center">
-                        ملخص الاشخاص
-                      </h3>
-                      <div className="w-10"></div>
-                    </div>
-                    <div className="space-y-3 overflow-y-auto max-h-[160px] pr-1">
-                      {(() => {
-                        const peopleData = filteredTransactionsList.reduce(
-                          (acc: any, t) => {
-                            // Handle main person
-                            if (t.personName) {
-                              if (!acc[t.personName]) {
-                                acc[t.personName] = { income: 0, expense: 0 };
-                              }
-                              if (t.type === "income")
-                                acc[t.personName].income += t.amount;
-                              if (t.type === "expense")
-                                acc[t.personName].expense += t.amount;
-                            }
-
-                            // Handle splits
-                            if (t.splits && t.splits.length > 0) {
-                              t.splits.forEach((split: any) => {
-                                if (!acc[split.personName]) {
-                                  acc[split.personName] = {
-                                    income: 0,
-                                    expense: 0,
-                                  };
-                                }
-                                if (t.type === "income")
-                                  acc[split.personName].income += split.amount;
-                                if (t.type === "expense")
-                                  acc[split.personName].expense += split.amount;
-                              });
-                            }
-                            return acc;
-                          },
-                          {},
-                        );
-
-                        const peopleList = Object.entries(peopleData).map(
-                          ([name, totals]: [string, any]) => ({
-                            name,
-                            ...totals,
-                            balance: totals.income - totals.expense,
-                          }),
-                        );
-
-                        if (peopleList.length === 0) {
-                          return (
-                            <p className="text-[10px] text-gray-400 text-center py-4">
-                              لا توجد بيانات اشخاص بعد
-                            </p>
-                          );
-                        }
-
-                        return peopleList
-                          .sort(
-                            (a, b) => Math.abs(b.balance) - Math.abs(a.balance),
-                          )
-                          .map((person) => (
-                            <div
-                              key={person.name}
-                              className="p-2 bg-gray-50 rounded-2xl border border-gray-100"
-                            >
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-xs font-black text-gray-900">
-                                  {person.name}
-                                </span>
-                                <span
-                                  className={`text-[10px] font-bold flex items-center gap-1 ${person.balance >= 0 ? "text-emerald-600" : "text-rose-600"}`}
-                                >
-                                  <FormattedNumber value={person.balance} /> د.ك
-                                </span>
-                              </div>
-                              <div className="flex gap-4 text-[9px] text-gray-500">
-                                <span className="flex items-center gap-1">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                  ايراد:{" "}
-                                  <FormattedNumber value={person.income} />
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
-                                  مصروف:{" "}
-                                  <FormattedNumber value={person.expense} />
-                                </span>
-                              </div>
-                            </div>
-                          ));
-                      })()}
-                    </div>
-                  </div>
-                </div>
+                )}
               </motion.div>
             )}
 

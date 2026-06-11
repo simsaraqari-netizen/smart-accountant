@@ -12,6 +12,9 @@
 }
 
 @layer base {
+  * {
+    font-family: 'Cairo', sans-serif;
+  }
   body {
     @apply bg-[var(--color-ios-background)] text-gray-900 antialiased;
     font-family: 'Cairo', sans-serif;
