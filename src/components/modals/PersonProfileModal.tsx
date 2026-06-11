@@ -49,8 +49,8 @@ export const PersonProfileModal: React.FC<PersonProfileModalProps> = ({
 
       if (isRelated) {
         txs.push({ ...tx, amountForPerson });
-        if (tx.type === 'income') income += amountForPerson;
-        if (tx.type === 'expense') expense += amountForPerson;
+        if (tx.type === 'income' || tx.type === 'custody_in') income += amountForPerson;
+        if (tx.type === 'expense' || tx.type === 'custody_out') expense += amountForPerson;
       }
     });
 

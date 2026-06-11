@@ -35,8 +35,8 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
         
         // Direct transaction
         if (tx.splitType === 'individual' && tx.personName === person.name) {
-          if (tx.type === 'income') totalIncome += amount;
-          if (tx.type === 'expense') totalExpense += amount;
+          if (tx.type === 'income' || tx.type === 'custody_in') totalIncome += amount;
+          if (tx.type === 'expense' || tx.type === 'custody_out') totalExpense += amount;
         }
         
         // Joint transaction
@@ -44,8 +44,8 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
           const split = tx.splits.find((s: any) => s.personName === person.name);
           if (split) {
             const splitAmount = typeof split.amount === 'string' ? parseFloat(split.amount) : split.amount;
-            if (tx.type === 'income') totalIncome += splitAmount;
-            if (tx.type === 'expense') totalExpense += splitAmount;
+            if (tx.type === 'income' || tx.type === 'custody_in') totalIncome += splitAmount;
+            if (tx.type === 'expense' || tx.type === 'custody_out') totalExpense += splitAmount;
           }
         }
       });
