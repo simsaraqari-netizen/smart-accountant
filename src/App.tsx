@@ -1,6 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { 
   PlusCircle, 
   MinusCircle, 
@@ -117,8 +115,8 @@ import { TransactionModal } from './components/modals/TransactionModal';
 import { CategoryModal } from './components/modals/CategoryModal';
 import { UserManagementModal } from './components/modals/UserManagementModal';
 import { PersonsModal } from './components/modals/PersonsModal';
-import { PersonsDashboard } from './components/pages/PersonsDashboard';
-import { PersonProfileModal } from './components/modals/PersonProfileModal';
+const PersonsDashboard = lazy(() => import('./components/pages/PersonsDashboard').then(m => ({ default: m.PersonsDashboard })));
+const PersonProfileModal = lazy(() => import('./components/modals/PersonProfileModal').then(m => ({ default: m.PersonProfileModal })));
 
 // --- Error Handling ---
 const handleFirestoreError = (error: unknown, operationType: FirestoreErrorInfo['operationType'], path: string | null) => {
