@@ -18,6 +18,12 @@ export const PersonProfileModal: React.FC<PersonProfileModalProps> = ({
   person,
   transactions
 }) => {
+  // Helper to ignore hamzas and spaces for robust matching
+  const normalizeArabic = (text?: string) => {
+    if (!text) return '';
+    return text.trim().replace(/[أإآ]/g, 'ا');
+  };
+
   // Filter and calculate stats specifically for this person
   const { personTransactions, stats } = useMemo(() => {
     if (!person) return { personTransactions: [], stats: { income: 0, expense: 0, net: 0 } };
@@ -34,14 +40,14 @@ export const PersonProfileModal: React.FC<PersonProfileModalProps> = ({
       if (isNaN(amount)) amount = 0;
 
       // Direct
-      if ((!tx.splitType || tx.splitType === 'individual') && tx.personName?.trim() === person?.name?.trim()) {
+      if ((!tx.splitType || tx.splitType === 'individual') && normalizeArabic(tx.personName) === normalizeArabic(person?.name)) {
         isRelated = true;
         amountForPerson = amount;
       }
       
       // Joint
       if (tx.splitType === 'joint' && tx.splits) {
-        const split = tx.splits.find((s: any) => s.personName?.trim() === person?.name?.trim());
+        const split = tx.splits.find((s: any) => normalizeArabic(s.personName) === normalizeArabic(person?.name));
         if (split) {
           isRelated = true;
           amountForPerson = typeof split.amount === 'string' ? parseFloat(split.amount) : split.amount;

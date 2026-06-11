@@ -24,6 +24,12 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Helper to ignore hamzas and spaces for robust matching
+  const normalizeArabic = (text?: string) => {
+    if (!text) return '';
+    return text.trim().replace(/[أإآ]/g, 'ا');
+  };
+
   // Calculate stats for each person
   const personsStats = useMemo(() => {
     return persons.map(person => {
@@ -35,14 +41,14 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
         if (isNaN(amount)) amount = 0;
         
         // Direct transaction
-        if ((!tx.splitType || tx.splitType === 'individual') && tx.personName?.trim() === person?.name?.trim()) {
+        if ((!tx.splitType || tx.splitType === 'individual') && normalizeArabic(tx.personName) === normalizeArabic(person.name)) {
           if (tx.type === 'income' || tx.type === 'custody_in') totalIncome += amount;
           if (tx.type === 'expense' || tx.type === 'custody_out') totalExpense += amount;
         }
         
         // Joint transaction
         if (tx.splitType === 'joint' && tx.splits) {
-          const split = tx.splits.find((s: any) => s.personName?.trim() === person?.name?.trim());
+          const split = tx.splits.find((s: any) => normalizeArabic(s.personName) === normalizeArabic(person.name));
           if (split) {
             let splitAmount = typeof split.amount === 'string' ? parseFloat(split.amount) : split.amount;
             if (isNaN(splitAmount)) splitAmount = 0;
