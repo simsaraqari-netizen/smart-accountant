@@ -312,10 +312,18 @@ export default function App() {
   const generatePDFReport = async () => {
     setIsGeneratingPDF(true);
     try {
-      window.print();
+      const { exportToPDF } = await import('./utils/pdfUtils');
+      const success = await exportToPDF('pdf-report-template', 'تقرير_المحاسب_الذكي');
+      if (success) {
+        showToast('تم حفظ التقرير كملف PDF بنجاح', 'success');
+      } else {
+        throw new Error('PDF Generation failed');
+      }
     } catch (error) {
-      console.error('Print Error:', error);
-      alert('فشل الطباعة أو التصدير.');
+      console.error('PDF Error:', error);
+      showToast('فشل إنشاء ملف PDF، يرجى المحاولة مرة أخرى.', 'error');
+      // Fallback to native print if PDF generation fails
+      window.print();
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -2392,20 +2400,37 @@ export default function App() {
                 </div>
                 <div className="flex gap-2 w-full sm:w-auto flex-1 sm:flex-none sm:justify-end">
                   <button 
+                    onClick={() => {
+                      import('./utils/exportUtils').then(module => {
+                        module.exportTransactionsToExcel(filteredTransactions);
+                        showToast('تم تصدير العمليات بنجاح', 'success');
+                      }).catch(err => {
+                        console.error('Failed to load export util', err);
+                        showToast('حدث خطأ أثناء التصدير', 'error');
+                      });
+                    }}
+                    className="flex-1 sm:flex-none bg-emerald-600 text-white px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors shadow-sm"
+                  >
+                    <Download className="w-4 h-4" />
+                    تصدير Excel
+                  </button>
+                  <button 
                     onClick={handleManualSyncToSheets}
                     disabled={isSyncing}
-                    className="flex-1 sm:flex-none bg-emerald-50 text-emerald-600 px-6 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-emerald-100 transition-colors disabled:opacity-50"
+                    className="flex-1 sm:flex-none bg-emerald-50 text-emerald-600 px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-emerald-100 transition-colors disabled:opacity-50"
+                    title="تصدير للجدول (Google Sheets)"
                   >
                     <ArrowUpRight className="w-4 h-4" />
-                    تصدير للجدول
+                    مزامنة (صعود)
                   </button>
                   <button 
                     onClick={syncFromSheets}
                     disabled={isSyncing}
-                    className="flex-1 sm:flex-none bg-blue-50 text-blue-600 px-6 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors disabled:opacity-50"
+                    className="flex-1 sm:flex-none bg-blue-50 text-blue-600 px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors disabled:opacity-50"
+                    title="مزامنة من الجدول (Google Sheets)"
                   >
-                    <Download className={`w-4 h-4 ${isSyncing ? 'animate-bounce' : ''}`} />
-                    مزامنة من الجدول
+                    <ArrowDownLeft className={`w-4 h-4 ${isSyncing ? 'animate-bounce' : ''}`} />
+                    مزامنة (نزول)
                   </button>
                 </div>
               </div>
