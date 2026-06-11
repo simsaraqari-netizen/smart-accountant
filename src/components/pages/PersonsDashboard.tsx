@@ -145,38 +145,37 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-gray-500 flex items-center gap-1">
-                  <ArrowUpRight className="w-3 h-3 text-emerald-500" /> ايرادات
-                </span>
-                <span className="text-sm font-black text-emerald-600">
+            <div className="grid grid-cols-3 gap-2 bg-gray-50/50 p-3 rounded-xl border border-gray-100 mt-4">
+              <div className="text-center border-l border-gray-200">
+                <div className="text-[10px] font-bold text-gray-500 mb-1 flex items-center justify-center gap-1">
+                  إيرادات <ArrowUpRight className="w-3 h-3 text-emerald-500" />
+                </div>
+                <div className="text-sm font-black text-emerald-600 truncate">
                   <FormattedNumber value={person.totalIncome} />
-                </span>
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-gray-500 flex items-center gap-1">
-                  <ArrowDownLeft className="w-3 h-3 text-rose-500" /> مدفوعات
-                </span>
-                <span className="text-sm font-black text-rose-600">
+              <div className="text-center border-l border-gray-200">
+                <div className="text-[10px] font-bold text-gray-500 mb-1 flex items-center justify-center gap-1">
+                  مدفوعات <ArrowDownLeft className="w-3 h-3 text-rose-500" />
+                </div>
+                <div className="text-sm font-black text-rose-600 truncate">
                   <FormattedNumber value={person.totalExpense} />
-                </span>
+                </div>
               </div>
-              
-              <div className="pt-3 mt-3 border-t border-gray-50 flex justify-between items-center bg-gray-50/50 p-2 rounded-xl">
-                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-1">
-                  <Wallet className="w-3 h-3" /> الرصيد
-                </span>
-                <span className={`text-base font-black ${
+              <div className="text-center">
+                <div className="text-[10px] font-bold text-gray-500 mb-1 flex items-center justify-center gap-1">
+                  الرصيد <Wallet className="w-3 h-3 text-gray-400" />
+                </div>
+                <div className={`text-sm font-black truncate ${
                   person.net > 0 ? 'text-emerald-600' : 
                   person.net < 0 ? 'text-rose-600' : 
                   'text-gray-900'
                 }`}>
                   <FormattedNumber value={Math.abs(person.net)} />
-                  <span className="text-[10px] font-bold ml-1 text-gray-500">
-                    {person.net > 0 ? 'له' : person.net < 0 ? 'عليه' : 'متزن'}
+                  <span className="text-[9px] font-bold ml-1 opacity-70">
+                    {person.net > 0 ? 'له' : person.net < 0 ? 'عليه' : ''}
                   </span>
-                </span>
+                </div>
               </div>
             </div>
           </motion.div>

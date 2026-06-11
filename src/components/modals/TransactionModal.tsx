@@ -131,7 +131,24 @@ export const TransactionModal = ({
                     step="0.001"
                     required
                     value={transaction.amount}
-                    onChange={(e) => setTransaction({ ...transaction, amount: e.target.value })}
+                    onChange={(e) => {
+                      const newAmount = e.target.value;
+                      const numNewAmount = parseFloat(newAmount) || 0;
+                      let newCustodyAmount = transaction.custodyAmount;
+                      const currentPercentage = parseFloat(transaction.custodyAmountPercentage);
+                      
+                      if (!isNaN(currentPercentage)) {
+                        newCustodyAmount = numNewAmount > 0 ? ((numNewAmount * currentPercentage) / 100).toString() : '';
+                      } else if (!transaction.custodyAmount || transaction.custodyAmount === transaction.amount) {
+                        newCustodyAmount = newAmount;
+                      }
+
+                      setTransaction({ 
+                        ...transaction, 
+                        amount: newAmount,
+                        custodyAmount: newCustodyAmount
+                      });
+                    }}
                     className="w-full bg-transparent border-b-2 border-gray-200 p-3 text-3xl font-black text-center text-gray-900 focus:border-gray-800 transition-all outline-none placeholder:text-gray-200"
                     placeholder="0.000"
                     autoFocus
@@ -306,17 +323,52 @@ export const TransactionModal = ({
                         </button>
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1.5">المبلغ المسحوب/المودع</label>
-                        <input 
-                          type="number" 
-                          step="0.001"
-                          required={transaction.isCustodyLinked && custodyAccounts.length > 0}
-                          value={transaction.custodyAmount}
-                          onChange={(e) => setTransaction({ ...transaction, custodyAmount: e.target.value })}
-                          className="w-full bg-transparent border border-gray-200 rounded-xl p-3 text-sm outline-none focus:border-gray-500 transition-colors"
-                          placeholder="اتركه فارغاً ليساوي مبلغ العملية"
-                        />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 mb-1.5">المبلغ من الحساب</label>
+                          <input 
+                            type="number" 
+                            step="0.001"
+                            required={transaction.isCustodyLinked && custodyAccounts.length > 0}
+                            value={transaction.custodyAmount}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const numVal = parseFloat(val) || 0;
+                              const txAmount = parseFloat(transaction.amount) || 0;
+                              let percentage = '';
+                              if (txAmount > 0 && numVal > 0) {
+                                percentage = parseFloat(((numVal / txAmount) * 100).toFixed(2)).toString();
+                              } else if (numVal === 0) {
+                                percentage = '0';
+                              }
+                              setTransaction({ ...transaction, custodyAmount: val, custodyAmountPercentage: percentage });
+                            }}
+                            className="w-full bg-transparent border border-gray-200 rounded-xl p-3 text-sm outline-none focus:border-gray-500 transition-colors"
+                            placeholder="المبلغ"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 mb-1.5">النسبة %</label>
+                          <input 
+                            type="number" 
+                            step="0.1"
+                            value={transaction.custodyAmountPercentage ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const numVal = parseFloat(val) || 0;
+                              const txAmount = parseFloat(transaction.amount) || 0;
+                              let amount = '';
+                              if (txAmount > 0 && numVal > 0) {
+                                amount = parseFloat(((txAmount * numVal) / 100).toFixed(3)).toString();
+                              } else if (numVal === 0) {
+                                amount = '0';
+                              }
+                              setTransaction({ ...transaction, custodyAmountPercentage: val, custodyAmount: amount });
+                            }}
+                            className="w-full bg-transparent border border-gray-200 rounded-xl p-3 text-sm outline-none focus:border-gray-500 transition-colors"
+                            placeholder="النسبة %"
+                          />
+                        </div>
                       </div>
                     </motion.div>
                   )}

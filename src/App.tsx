@@ -311,6 +311,7 @@ export default function App() {
     description: "",
     custodyAccountId: "",
     custodyAmount: "",
+    custodyAmountPercentage: "100",
     personName: "",
     splitType: "individual",
     splits: [],
@@ -394,6 +395,7 @@ export default function App() {
     date: new Date().toISOString().split("T")[0],
     custodyAccountId: "",
     custodyAmount: "",
+    custodyAmountPercentage: "100",
     custodyType: "custody_out",
     personName: "",
     splitType: "individual" as "individual" | "joint",
@@ -1679,6 +1681,9 @@ export default function App() {
         description: editingTransaction.description || "",
         custodyAccountId: editingTransaction.custodyAccountId || "",
         custodyAmount: (editingTransaction.custodyAmount || 0).toString(),
+        custodyAmountPercentage: (editingTransaction.amount > 0 && editingTransaction.custodyAmount) 
+            ? ((editingTransaction.custodyAmount / editingTransaction.amount) * 100).toFixed(2) 
+            : "100",
         personName: editingTransaction.personName || "",
         splitType:
           editingTransaction.splits && editingTransaction.splits.length > 0
@@ -2157,6 +2162,7 @@ export default function App() {
           date: new Date().toISOString().split("T")[0],
           custodyAccountId: "",
           custodyAmount: "",
+    custodyAmountPercentage: "100",
           custodyType: "custody_out",
           personName: "",
           isCustodyLinked: true,
