@@ -60,12 +60,47 @@ export const TransactionModal = ({
     setTransaction({ ...transaction, splits: newSplits });
   };
 
-  const addSplit = () => {
+  const recalculateSplitsEqually = (currentSplits: any[]) => {
+    if (currentSplits.length === 0) return [];
+    const txAmount = parseFloat(transaction.amount?.toString().replace(/,/g, '.').replace(/٫/g, '.')) || 0;
+    const splitAmount = txAmount / currentSplits.length;
+    const splitPercentage = 100 / currentSplits.length;
+    return currentSplits.map(s => ({
+      ...s,
+      amount: splitAmount === 0 ? '' : parseFloat(splitAmount.toFixed(3)),
+      percentage: splitPercentage === 0 ? '' : parseFloat(splitPercentage.toFixed(2))
+    }));
+  };
+
+  const togglePersonSplit = (personName: string) => {
     const currentSplits = transaction.splits || [];
-    setTransaction({
-      ...transaction,
-      splits: [...currentSplits, { personName: '', percentage: 0, amount: 0 }]
-    });
+    const isSelected = currentSplits.some((s: any) => s.personName === personName);
+    
+    let newSplits;
+    if (isSelected) {
+      newSplits = currentSplits.filter((s: any) => s.personName !== personName);
+    } else {
+      newSplits = [...currentSplits, { personName, percentage: 0, amount: 0 }];
+    }
+    
+    newSplits = recalculateSplitsEqually(newSplits);
+    setTransaction({ ...transaction, splits: newSplits });
+  };
+
+  const toggleAllSplits = () => {
+    const currentSplits = transaction.splits || [];
+    let newSplits;
+    if (currentSplits.length === persons.length) {
+      newSplits = [];
+    } else {
+      newSplits = persons.map((p: any) => ({
+        personName: p.name,
+        percentage: 0,
+        amount: 0
+      }));
+      newSplits = recalculateSplitsEqually(newSplits);
+    }
+    setTransaction({ ...transaction, splits: newSplits });
   };
 
   const removeSplit = (index: number) => {
@@ -378,18 +413,42 @@ export const TransactionModal = ({
               <div className="space-y-4 mb-6">
                   <div className="flex justify-between items-center border-b pb-2">
                     <h4 className="text-sm font-bold text-gray-800">تقسيم المبالغ</h4>
-                    <button 
-                      type="button"
-                      onClick={addSplit}
-                      className="text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-gray-50 transition-all"
-                    >
-                      <Plus className="w-3 h-3" />
-                      إضافة قسم
-                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-gray-500">اختر الموظفين المشتركين:</span>
+                      <button 
+                        type="button"
+                        onClick={toggleAllSplits}
+                        className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded hover:bg-blue-100"
+                      >
+                        {transaction.splits?.length === persons.length ? 'إلغاء تحديد الكل' : 'تحديد الكل'}
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {persons.map((p: any) => {
+                        const isSelected = transaction.splits?.some((s: any) => s.personName === p.name);
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => togglePersonSplit(p.name)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                              isSelected 
+                                ? 'bg-blue-600 text-white border-blue-600' 
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                            }`}
+                          >
+                            {p.name}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {transaction.splits?.length > 0 && (
-                  <div className="space-y-4 pt-2">
+                  <div className="space-y-4 pt-4 border-t">
                     {transaction.splits?.map((split: any, index: number) => (
                       <div 
                         key={index}
@@ -405,23 +464,16 @@ export const TransactionModal = ({
 
                         <div className="pr-8">
                           <label className="block text-xs font-bold text-gray-500 mb-1.5">الموظف</label>
-                          <select 
-                            required
-                            value={split.personName || ''}
-                            onChange={(e) => handleSplitChange(index, 'personName', e.target.value)}
-                            className="w-full bg-white border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-gray-500"
-                          >
-                            <option value="" disabled>اختر الموظف...</option>
-                            {persons.map(p => (
-                              <option key={p.id} value={p.name}>{p.name}</option>
-                            ))}
-                          </select>
+                          <div className="w-full bg-white border border-gray-200 rounded-lg p-2.5 text-sm font-bold text-gray-700">
+                            {split.personName}
+                          </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <label className="block text-xs font-bold text-gray-500 mb-1.5">النسبة (%)</label>
                             <input 
-                              type="text" 
+                              type="number" 
+                              step="0.1"
                               required
                               value={split.percentage === 0 && split.amount === 0 ? '' : split.percentage}
                               onChange={(e) => handleSplitChange(index, 'percentage', e.target.value)}
@@ -432,12 +484,13 @@ export const TransactionModal = ({
                           <div>
                             <label className="block text-xs font-bold text-gray-500 mb-1.5">المبلغ</label>
                             <input 
-                              type="text" 
+                              type="number" 
+                              step="0.001"
                               required
                               value={split.amount === 0 && split.percentage === 0 ? '' : split.amount}
                               onChange={(e) => handleSplitChange(index, 'amount', e.target.value)}
                               className="w-full bg-white border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-gray-500"
-                              placeholder="0.000"
+                              placeholder="0"
                             />
                           </div>
                         </div>

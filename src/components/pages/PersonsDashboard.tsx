@@ -145,7 +145,7 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 bg-gray-50/50 p-3 rounded-xl border border-gray-100 mt-4">
+            <div className="grid grid-cols-3 gap-2 bg-gray-50/50 p-4 -mx-5 -mb-5 rounded-b-2xl border-t border-gray-100 mt-4">
               <div className="text-center border-l border-gray-200">
                 <div className="text-[10px] font-bold text-gray-500 mb-1 flex items-center justify-center gap-1">
                   إيرادات <ArrowUpRight className="w-3 h-3 text-emerald-500" />
