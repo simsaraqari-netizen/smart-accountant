@@ -27,7 +27,14 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
   // Helper to ignore hamzas and spaces for robust matching
   const normalizeArabic = (text?: string) => {
     if (!text) return '';
-    return text.trim().replace(/[أإآ]/g, 'ا');
+    return text.trim().toLowerCase().replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ي$/g, 'ى');
+  };
+
+  const isMatch = (name1?: string, name2?: string) => {
+    if (!name1 || !name2) return false;
+    const n1 = normalizeArabic(name1);
+    const n2 = normalizeArabic(name2);
+    return n1 === n2 || n1.includes(n2) || n2.includes(n1);
   };
 
   // Calculate stats for each person
@@ -41,14 +48,14 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
         if (isNaN(amount)) amount = 0;
         
         // Direct transaction
-        if ((!tx.splitType || tx.splitType === 'individual') && normalizeArabic(tx.personName) === normalizeArabic(person.name)) {
+        if ((!tx.splitType || tx.splitType === 'individual') && isMatch(tx.personName, person.name)) {
           if (tx.type === 'income' || tx.type === 'custody_in') totalIncome += amount;
           if (tx.type === 'expense' || tx.type === 'custody_out') totalExpense += amount;
         }
         
         // Joint transaction
         if (tx.splitType === 'joint' && tx.splits) {
-          const split = tx.splits.find((s: any) => normalizeArabic(s.personName) === normalizeArabic(person.name));
+          const split = tx.splits.find((s: any) => isMatch(s.personName, person.name));
           if (split) {
             let splitAmount = typeof split.amount === 'string' ? parseFloat(split.amount) : split.amount;
             if (isNaN(splitAmount)) splitAmount = 0;

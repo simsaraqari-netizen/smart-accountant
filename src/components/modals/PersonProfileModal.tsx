@@ -21,7 +21,14 @@ export const PersonProfileModal: React.FC<PersonProfileModalProps> = ({
   // Helper to ignore hamzas and spaces for robust matching
   const normalizeArabic = (text?: string) => {
     if (!text) return '';
-    return text.trim().replace(/[أإآ]/g, 'ا');
+    return text.trim().toLowerCase().replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ي$/g, 'ى');
+  };
+
+  const isMatch = (name1?: string, name2?: string) => {
+    if (!name1 || !name2) return false;
+    const n1 = normalizeArabic(name1);
+    const n2 = normalizeArabic(name2);
+    return n1 === n2 || n1.includes(n2) || n2.includes(n1);
   };
 
   // Filter and calculate stats specifically for this person
@@ -40,14 +47,14 @@ export const PersonProfileModal: React.FC<PersonProfileModalProps> = ({
       if (isNaN(amount)) amount = 0;
 
       // Direct
-      if ((!tx.splitType || tx.splitType === 'individual') && normalizeArabic(tx.personName) === normalizeArabic(person?.name)) {
+      if ((!tx.splitType || tx.splitType === 'individual') && isMatch(tx.personName, person?.name)) {
         isRelated = true;
         amountForPerson = amount;
       }
       
       // Joint
       if (tx.splitType === 'joint' && tx.splits) {
-        const split = tx.splits.find((s: any) => normalizeArabic(s.personName) === normalizeArabic(person?.name));
+        const split = tx.splits.find((s: any) => isMatch(s.personName, person?.name));
         if (split) {
           isRelated = true;
           amountForPerson = typeof split.amount === 'string' ? parseFloat(split.amount) : split.amount;
