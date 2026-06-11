@@ -244,7 +244,7 @@ export const TransactionModal = ({
               {/* Custody Linking Section */}
               <div className="space-y-4 mb-6">
                  <div className="flex items-center justify-between border-b pb-2">
-                    <h4 className="text-sm font-bold text-gray-800">الربط بعهدة مالية</h4>
+                    <h4 className="text-sm font-bold text-gray-800">الربط بحساب مالي</h4>
                     <button 
                       type="button"
                       onClick={() => setTransaction({ ...transaction, isCustodyLinked: !transaction.isCustodyLinked })}
@@ -261,18 +261,24 @@ export const TransactionModal = ({
                       className="space-y-4 pt-2"
                     >
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1.5">حساب العهدة</label>
-                        <select 
-                          required={transaction.isCustodyLinked}
-                          value={transaction.custodyAccountId}
-                          onChange={(e) => setTransaction({ ...transaction, custodyAccountId: e.target.value })}
-                          className="w-full bg-transparent border border-gray-200 rounded-xl p-3 text-sm outline-none focus:border-gray-500 transition-colors"
-                        >
-                          <option value="">اختر الحساب...</option>
-                          {custodyAccounts.map(acc => (
-                            <option key={acc.id} value={acc.id}>{acc.name} (الرصيد: {acc.balance.toLocaleString('en-US')})</option>
-                          ))}
-                        </select>
+                        <label className="block text-xs font-bold text-gray-500 mb-1.5">الحساب</label>
+                        {custodyAccounts.length > 0 ? (
+                          <select 
+                            required={transaction.isCustodyLinked}
+                            value={transaction.custodyAccountId}
+                            onChange={(e) => setTransaction({ ...transaction, custodyAccountId: e.target.value })}
+                            className="w-full bg-transparent border border-gray-200 rounded-xl p-3 text-sm outline-none focus:border-gray-500 transition-colors"
+                          >
+                            <option value="">اختر الحساب...</option>
+                            {custodyAccounts.map(acc => (
+                              <option key={acc.id} value={acc.id}>{acc.name} (الرصيد: {acc.balance.toLocaleString('en-US')})</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-500 text-center">
+                            لا يوجد حسابات - سيتم إنشاء "حساب الشركة" تلقائياً
+                          </div>
+                        )}
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
@@ -285,7 +291,7 @@ export const TransactionModal = ({
                               : 'bg-transparent border-gray-200 text-gray-500'
                           }`}
                         >
-                          خصم من العهدة
+                          سحب من الحساب
                         </button>
                         <button 
                           type="button"
@@ -296,16 +302,16 @@ export const TransactionModal = ({
                               : 'bg-transparent border-gray-200 text-gray-500'
                           }`}
                         >
-                          إضافة للعهدة
+                          إيداع في الحساب
                         </button>
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1.5">مبلغ العهدة</label>
+                        <label className="block text-xs font-bold text-gray-500 mb-1.5">المبلغ المسحوب/المودع</label>
                         <input 
                           type="number" 
                           step="0.001"
-                          required={transaction.isCustodyLinked}
+                          required={transaction.isCustodyLinked && custodyAccounts.length > 0}
                           value={transaction.custodyAmount}
                           onChange={(e) => setTransaction({ ...transaction, custodyAmount: e.target.value })}
                           className="w-full bg-transparent border border-gray-200 rounded-xl p-3 text-sm outline-none focus:border-gray-500 transition-colors"

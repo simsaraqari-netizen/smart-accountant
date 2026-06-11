@@ -99,7 +99,7 @@ export const MonthlyReportTemplate = ({ transactions, custodyAccounts }: Monthly
           <p className="text-3xl font-black text-emerald-700">{formatCurrency(netProfit)}</p>
         </div>
         <div className="bg-purple-50 p-6 rounded-2xl border-2 border-purple-100">
-          <p className="text-purple-900 font-bold mb-2">إجمالي رصيد العهدة</p>
+          <p className="text-purple-900 font-bold mb-2">إجمالي رصيد الحسابات</p>
           <p className="text-3xl font-black text-purple-700">{formatCurrency(totalCustody)}</p>
         </div>
       </div>
@@ -131,7 +131,7 @@ export const MonthlyReportTemplate = ({ transactions, custodyAccounts }: Monthly
 
         {/* Custody Accounts Breakdown */}
         <div>
-          <h3 className="text-xl font-black text-gray-800 mb-4 border-b-2 border-gray-200 pb-2">حسابات العهدة</h3>
+          <h3 className="text-xl font-black text-gray-800 mb-4 border-b-2 border-gray-200 pb-2">الحسابات</h3>
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-100">

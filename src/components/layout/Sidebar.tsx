@@ -127,7 +127,7 @@ export const Sidebar = ({
                       <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
                         <Coins className="w-5 h-5 text-amber-600" />
                       </div>
-                      <span className="font-bold text-sm text-gray-700 flex-1 text-right">العهدة</span>
+                      <span className="font-bold text-sm text-gray-700 flex-1 text-right">الحسابات</span>
                       <span className="font-black text-sm text-amber-700"><FormattedNumber value={custodyTotal} /></span>
                     </div>
                   </button>
@@ -172,7 +172,7 @@ export const Sidebar = ({
                   >
                     <div className="flex items-center gap-3">
                       <Coins className="w-5 h-5" />
-                      <span className="font-bold text-sm">إدارة العهدة</span>
+                      <span className="font-bold text-sm">إدارة الحسابات</span>
                     </div>
                     <ChevronLeft className="w-4 h-4 opacity-30" />
                   </button>

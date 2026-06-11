@@ -1950,11 +1950,12 @@ export default function App() {
     if (
       newTx.isCustodyLinked &&
       !newTx.custodyAccountId &&
-      !newTx.newAccountName
+      !newTx.newAccountName &&
+      custodyAccounts.length > 0
     ) {
       setFormStatus({
         type: "error",
-        message: "يرجى اختيار أو إضافة حساب العهدة لهذه العملية.",
+        message: "يرجى اختيار أو إضافة الحساب لهذه العملية.",
       });
       return;
     }
@@ -1964,6 +1965,18 @@ export default function App() {
     try {
       let finalCategory = newTx.category;
       let finalCustodyAccountId = newTx.custodyAccountId;
+      
+      // Auto-create "حساب الشركة" if no accounts exist and none is selected
+      if (newTx.isCustodyLinked && !finalCustodyAccountId && custodyAccounts.length === 0) {
+        const newAccountRef = await addDoc(collection(db, "custody_accounts"), {
+          name: "حساب الشركة",
+          balance: 0,
+          userId: tenantId,
+          createdAt: Timestamp.now(),
+        });
+        finalCustodyAccountId = newAccountRef.id;
+      }
+      
       let finalPersonName =
         newTx.splitType === "individual"
           ? newTx.isAddingNewPerson
@@ -2615,7 +2628,7 @@ export default function App() {
                           )}
                           {showOnlyCustody && (
                             <span className="px-2 py-0.5 rounded-2xl text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100">
-                              العهدة فقط
+                              الحسابات فقط
                             </span>
                           )}
                           {Object.values(advancedFilters).some(
@@ -2916,10 +2929,10 @@ export default function App() {
                   </button>
                   <div>
                     <h3 className="text-lg font-black text-emerald-600">
-                      إدارة العهدة المالية
+                      إدارة الحسابات البنكية والصناديق
                     </h3>
                     <p className="text-xs text-gray-500">
-                      عرض وإدارة جميع حسابات العهدة الخاصة بك
+                      عرض وإدارة جميع الحسابات الخاصة بك
                     </p>
                   </div>
                 </div>
@@ -2950,7 +2963,7 @@ export default function App() {
                               onClick={() => {
                                 setConfirmDialog({
                                   isOpen: true,
-                                  message: "هل أنت متأكد من حذف حساب العهدة؟",
+                                  message: "هل أنت متأكد من حذف الحساب؟",
                                   onConfirm: async () => {
                                     const { id: _id, ...accData } = acc;
                                     pushToHistory({
@@ -3003,7 +3016,7 @@ export default function App() {
                 {/* Custody Transactions Box */}
                 <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mt-8">
                   <h3 className="text-lg font-black text-gray-900 mb-4">
-                    سجل عمليات العهدة
+                    سجل عمليات الحسابات
                   </h3>
                   <div className="space-y-4">
                     {transactions
@@ -3411,7 +3424,7 @@ export default function App() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-gray-500 mb-1">
-                      حساب العهدة
+                      الحساب
                     </label>
                     <select
                       value={advancedFilters.custodyAccountId}
@@ -3800,7 +3813,7 @@ function doPost(e) {
                   <div className="w-10"></div>
                   <h3 className="text-lg font-black text-gray-900">
                     {editingCustody
-                      ? "تعديل حساب العهدة"
+                      ? "تعديل الحساب"
                       : "اضافة حساب عهدة جديد"}
                   </h3>
                   <button
