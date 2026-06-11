@@ -113,6 +113,16 @@ export const Sidebar = ({
                     </div>
                     <ChevronLeft className="w-4 h-4 opacity-30" />
                   </button>
+                  <button 
+                    onClick={() => { setActiveTab('persons'); onClose(); }}
+                    className={`ios-list-item w-full ${activeTab === 'persons' ? 'bg-blue-50 text-[var(--color-ios-blue)]' : 'text-gray-700'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Users className="w-5 h-5" />
+                      <span className="font-bold text-sm">الأشخاص</span>
+                    </div>
+                    <ChevronLeft className="w-4 h-4 opacity-30" />
+                  </button>
                 </div>
               </div>
 
