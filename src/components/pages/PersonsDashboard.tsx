@@ -31,7 +31,8 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
       let totalExpense = 0;
 
       transactions.forEach(tx => {
-        const amount = typeof tx.amount === 'string' ? parseFloat(tx.amount) : tx.amount;
+        let amount = typeof tx.amount === 'string' ? parseFloat(tx.amount) : tx.amount;
+        if (isNaN(amount)) amount = 0;
         
         // Direct transaction
         if (tx.splitType === 'individual' && tx.personName === person.name) {
@@ -43,7 +44,8 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
         if (tx.splitType === 'joint' && tx.splits) {
           const split = tx.splits.find((s: any) => s.personName === person.name);
           if (split) {
-            const splitAmount = typeof split.amount === 'string' ? parseFloat(split.amount) : split.amount;
+            let splitAmount = typeof split.amount === 'string' ? parseFloat(split.amount) : split.amount;
+            if (isNaN(splitAmount)) splitAmount = 0;
             if (tx.type === 'income' || tx.type === 'custody_in') totalIncome += splitAmount;
             if (tx.type === 'expense' || tx.type === 'custody_out') totalExpense += splitAmount;
           }
@@ -106,12 +108,12 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
         {filteredPersons.map(person => (
           <motion.div 
             key={person.id}
-            whileHover={{ y: -5 }}
+            whileHover={{ y: -3 }}
             onClick={() => onOpenPersonProfile(person)}
-            className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:border-blue-200 hover:shadow-md transition-all group"
+            className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:border-blue-200 hover:shadow-md transition-all group"
           >
-            <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-50">
-              <h3 className="text-lg font-black text-gray-900 group-hover:text-blue-600 transition-colors">
+            <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-50">
+              <h3 className="text-[15px] font-black text-gray-900 group-hover:text-blue-600 transition-colors">
                 {person.name}
               </h3>
               <div className="flex gap-1">
@@ -145,28 +147,28 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 bg-gray-50/50 p-4 -mx-5 -mb-5 rounded-b-2xl border-t border-gray-100 mt-4">
+            <div className="grid grid-cols-3 gap-2 bg-gray-50/50 py-3 px-4 -mx-4 -mb-4 rounded-b-2xl border-t border-gray-100 mt-2">
               <div className="text-center border-l border-gray-200">
-                <div className="text-[10px] font-bold text-gray-500 mb-1 flex items-center justify-center gap-1">
+                <div className="text-[10px] font-bold text-gray-500 mb-0.5 flex items-center justify-center gap-1">
                   إيرادات <ArrowUpRight className="w-3 h-3 text-emerald-500" />
                 </div>
-                <div className="text-sm font-black text-emerald-600 truncate">
+                <div className="text-[13px] font-black text-emerald-600 truncate">
                   <FormattedNumber value={person.totalIncome} />
                 </div>
               </div>
               <div className="text-center border-l border-gray-200">
-                <div className="text-[10px] font-bold text-gray-500 mb-1 flex items-center justify-center gap-1">
+                <div className="text-[10px] font-bold text-gray-500 mb-0.5 flex items-center justify-center gap-1">
                   مدفوعات <ArrowDownLeft className="w-3 h-3 text-rose-500" />
                 </div>
-                <div className="text-sm font-black text-rose-600 truncate">
+                <div className="text-[13px] font-black text-rose-600 truncate">
                   <FormattedNumber value={person.totalExpense} />
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-[10px] font-bold text-gray-500 mb-1 flex items-center justify-center gap-1">
+                <div className="text-[10px] font-bold text-gray-500 mb-0.5 flex items-center justify-center gap-1">
                   الرصيد <Wallet className="w-3 h-3 text-gray-400" />
                 </div>
-                <div className={`text-sm font-black truncate ${
+                <div className={`text-[13px] font-black truncate ${
                   person.net > 0 ? 'text-emerald-600' : 
                   person.net < 0 ? 'text-rose-600' : 
                   'text-gray-900'

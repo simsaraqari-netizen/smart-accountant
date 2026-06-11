@@ -30,7 +30,8 @@ export const PersonProfileModal: React.FC<PersonProfileModalProps> = ({
       let isRelated = false;
       let amountForPerson = 0;
       
-      const amount = typeof tx.amount === 'string' ? parseFloat(tx.amount) : tx.amount;
+      let amount = typeof tx.amount === 'string' ? parseFloat(tx.amount) : tx.amount;
+      if (isNaN(amount)) amount = 0;
 
       // Direct
       if (tx.splitType === 'individual' && tx.personName === person.name) {
@@ -44,6 +45,7 @@ export const PersonProfileModal: React.FC<PersonProfileModalProps> = ({
         if (split) {
           isRelated = true;
           amountForPerson = typeof split.amount === 'string' ? parseFloat(split.amount) : split.amount;
+          if (isNaN(amountForPerson)) amountForPerson = 0;
         }
       }
 
@@ -55,7 +57,11 @@ export const PersonProfileModal: React.FC<PersonProfileModalProps> = ({
     });
 
     // Sort by date descending
-    txs.sort((a, b) => b.date.toDate().getTime() - a.date.toDate().getTime());
+    txs.sort((a, b) => {
+      const dateA = a.date && typeof a.date.toDate === 'function' ? a.date.toDate().getTime() : (a.date ? new Date(a.date).getTime() : 0);
+      const dateB = b.date && typeof b.date.toDate === 'function' ? b.date.toDate().getTime() : (b.date ? new Date(b.date).getTime() : 0);
+      return dateB - dateA;
+    });
 
     return { 
       personTransactions: txs, 
@@ -173,7 +179,10 @@ export const PersonProfileModal: React.FC<PersonProfileModalProps> = ({
                           <div>
                             <p className="text-xs font-bold text-gray-900 mb-0.5 print:text-[11px]">{tx.description || tx.category}</p>
                             <p className="text-[10px] font-bold text-gray-400 flex items-center gap-2 print:text-[9px]">
-                              {format(tx.date.toDate(), 'd/M/yyyy', { locale: ar })}
+                              {(() => {
+                                const dateObj = tx.date && typeof tx.date.toDate === 'function' ? tx.date.toDate() : (tx.date ? new Date(tx.date) : new Date());
+                                return format(dateObj, 'd/M/yyyy', { locale: ar });
+                              })()}
                               {tx.splitType === 'joint' && (
                                 <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-500">عملية مشتركة</span>
                               )}
