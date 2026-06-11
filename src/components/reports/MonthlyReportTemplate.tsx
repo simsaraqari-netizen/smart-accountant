@@ -59,7 +59,7 @@ export const MonthlyReportTemplate = ({ transactions, custodyAccounts }: Monthly
 
   return (
     <div 
-      id="monthly-report-template" 
+      id="pdf-report-template" 
       className="bg-white text-black p-8"
       style={{ 
         width: '210mm',
