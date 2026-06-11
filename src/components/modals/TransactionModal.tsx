@@ -151,7 +151,7 @@ export const TransactionModal = ({
                 <div className="grid grid-cols-2 gap-3">
                   <button 
                     type="button"
-                    onClick={() => setTransaction({ ...transaction, type: 'expense' })}
+                    onClick={() => setTransaction({ ...transaction, type: 'expense', custodyType: 'custody_out' })}
                     className={`flex items-center justify-center gap-1 p-2.5 rounded-lg border-2 transition-all duration-300 font-black text-xs ${
                       transaction.type === 'expense' 
                         ? 'bg-rose-50 border-rose-500 text-rose-600 shadow-sm shadow-rose-100' 
@@ -163,7 +163,7 @@ export const TransactionModal = ({
                   </button>
                   <button 
                     type="button"
-                    onClick={() => setTransaction({ ...transaction, type: 'income' })}
+                    onClick={() => setTransaction({ ...transaction, type: 'income', custodyType: 'custody_in' })}
                     className={`flex items-center justify-center gap-1 p-2.5 rounded-lg border-2 transition-all duration-300 font-black text-xs ${
                       transaction.type === 'income' 
                         ? 'bg-emerald-50 border-emerald-500 text-emerald-600 shadow-sm shadow-emerald-100' 
@@ -183,34 +183,25 @@ export const TransactionModal = ({
                     <div className="flex justify-between items-center mb-1">
                       <label className="block text-[10px] font-black text-gray-400 tracking-widest uppercase">الفئة</label>
                       {onOpenAddCategory && (
-                        <button type="button" onClick={onOpenAddCategory} className="text-[10px] font-bold text-blue-500 hover:text-blue-600 flex items-center gap-0.5">
+                        <button type="button" onClick={onOpenAddCategory} className="px-2 py-1 bg-blue-50 text-blue-600 rounded-md text-xs font-bold hover:bg-blue-100 flex items-center gap-1 transition-colors">
                           <Plus className="w-3 h-3" /> إضافة فئة
                         </button>
                       )}
                     </div>
                     <div className="relative">
-                      <input 
-                        type="text"
-                        list="categories-list"
+                      <select 
                         required
-                        value={transaction.category || transaction.newCategoryName || ''}
+                        value={transaction.category || ''}
                         onChange={(e) => {
-                          const val = e.target.value;
-                          const existingCat = categories.find(c => c.name === val);
-                          if (existingCat) {
-                            setTransaction({ ...transaction, category: val, isAddingNewCategory: false, newCategoryName: '' });
-                          } else {
-                            setTransaction({ ...transaction, category: '', isAddingNewCategory: true, newCategoryName: val });
-                          }
+                          setTransaction({ ...transaction, category: e.target.value, isAddingNewCategory: false, newCategoryName: '' });
                         }}
-                        className="w-full bg-white border-2 border-gray-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none"
-                        placeholder="اختر أو اكتب فئة جديدة..."
-                      />
-                      <datalist id="categories-list">
+                        className="w-full bg-white border-2 border-gray-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none appearance-none"
+                      >
+                        <option value="" disabled>اختر الفئة...</option>
                         {categories.filter(c => c.type === transaction.type || c.type === 'all').map(cat => (
-                          <option key={cat.id} value={cat.name} />
+                          <option key={cat.id} value={cat.name}>{cat.name}</option>
                         ))}
-                      </datalist>
+                      </select>
                     </div>
                   </div>
 
@@ -218,22 +209,23 @@ export const TransactionModal = ({
                     <div className="flex justify-between items-center mb-1">
                       <label className="block text-[10px] font-black text-gray-400 tracking-widest uppercase">الموظف</label>
                       {onOpenAddPerson && (
-                        <button type="button" onClick={onOpenAddPerson} className="text-[10px] font-bold text-blue-500 hover:text-blue-600 flex items-center gap-0.5">
+                        <button type="button" onClick={onOpenAddPerson} className="px-2 py-1 bg-blue-50 text-blue-600 rounded-md text-xs font-bold hover:bg-blue-100 flex items-center gap-1 transition-colors">
                           <Plus className="w-3 h-3" /> إضافة موظف
                         </button>
                       )}
                     </div>
-                    <input 
-                      type="text" 
-                      list="persons-list"
-                      value={transaction.personName}
-                      onChange={(e) => setTransaction({ ...transaction, personName: e.target.value })}
-                      className="w-full bg-white border-2 border-gray-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none"
-                      placeholder="اسم الموظف (اختياري)..."
-                    />
-                    <datalist id="persons-list">
-                      {persons.map(p => <option key={p.id} value={p.name} />)}
-                    </datalist>
+                    <div className="relative">
+                      <select 
+                        value={transaction.personName || ''}
+                        onChange={(e) => setTransaction({ ...transaction, personName: e.target.value })}
+                        className="w-full bg-white border-2 border-gray-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none appearance-none"
+                      >
+                        <option value="">بدون موظف (اختياري)</option>
+                        {persons.map(p => (
+                          <option key={p.id} value={p.name}>{p.name}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
                   <div>
