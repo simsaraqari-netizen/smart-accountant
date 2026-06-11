@@ -191,7 +191,7 @@ export const TransactionModal = ({
                         onChange={(e) => {
                           setTransaction({ ...transaction, category: e.target.value, isAddingNewCategory: false, newCategoryName: '' });
                         }}
-                        className="w-full bg-white border-2 border-gray-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none appearance-none"
+                        className="w-full bg-white border-2 border-gray-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none"
                       >
                         <option value="" disabled>اختر الفئة...</option>
                         {categories.filter(c => c.type === transaction.type || c.type === 'all').map(cat => (
@@ -214,7 +214,7 @@ export const TransactionModal = ({
                       <select 
                         value={transaction.personName || ''}
                         onChange={(e) => setTransaction({ ...transaction, personName: e.target.value })}
-                        className="w-full bg-white border-2 border-gray-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none appearance-none"
+                        className="w-full bg-white border-2 border-gray-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none"
                       >
                         <option value="">بدون موظف (اختياري)</option>
                         {persons.map(p => (
@@ -374,7 +374,7 @@ export const TransactionModal = ({
                               required
                               value={split.personName || ''}
                               onChange={(e) => handleSplitChange(index, 'personName', e.target.value)}
-                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs font-bold text-right outline-none focus:border-blue-400 appearance-none"
+                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs font-bold text-right outline-none focus:border-blue-400"
                             >
                               <option value="" disabled>اختر الموظف...</option>
                               {persons.map(p => (
