@@ -2400,9 +2400,12 @@ export default function App() {
           onShowUserManagement={() => setShowUserManagementModal(true)}
           onShowPersonsModal={() => setShowPersonsModal(true)}
           onLogout={handleSignOut}
+          totals={totals}
+          custodyTotal={custodyTotal}
+          profitLoss={profitLoss}
         />
 
-        <main className="max-w-7xl mx-auto px-4 py-4">
+        <main className="w-full px-4 py-4">
           {/* Stats Grid */}
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-black text-gray-800">نظرة عامة</h2>
@@ -2443,41 +2446,6 @@ export default function App() {
                 تصدير PDF
               </button>
             </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-4">
-            <StatCard
-              title="إجمالي الإيرادات"
-              amount={totals.income}
-              icon={ArrowUpRight}
-              color="bg-emerald-500"
-              onClick={() => {
-                setFilterType("income");
-                setActiveTab("transactions");
-              }}
-            />
-            <StatCard
-              title="إجمالي المصاريف"
-              amount={totals.expense}
-              icon={ArrowDownLeft}
-              color="bg-rose-500"
-              onClick={() => {
-                setFilterType("expense");
-                setActiveTab("transactions");
-              }}
-            />
-            <StatCard
-              title="إجمالي العهدة"
-              amount={custodyTotal}
-              icon={Coins}
-              color="bg-amber-500"
-              onClick={() => setActiveTab("custody")}
-            />
-            <StatCard
-              title="صافي الربح | الخسارة"
-              amount={profitLoss}
-              icon={PieChartIcon}
-              color={profitLoss >= 0 ? "bg-blue-500" : "bg-orange-500"}
-            />
           </div>
 
           {/* Tabs */}

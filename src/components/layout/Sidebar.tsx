@@ -12,8 +12,12 @@ import {
   Settings, 
   Users, 
   LogOut, 
-  ChevronLeft 
+  ChevronLeft,
+  ArrowUpRight,
+  ArrowDownLeft,
+  PieChartIcon
 } from 'lucide-react';
+import { FormattedNumber } from '../common/FormattedNumber';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -29,6 +33,9 @@ interface SidebarProps {
   onShowUserManagement: () => void;
   onShowPersonsModal: () => void;
   onLogout: () => void;
+  totals: { income: number; expense: number };
+  custodyTotal: number;
+  profitLoss: number;
 }
 
 export const Sidebar = ({
@@ -44,7 +51,10 @@ export const Sidebar = ({
   onShowCategories,
   onShowUserManagement,
   onShowPersonsModal,
-  onLogout
+  onLogout,
+  totals,
+  custodyTotal,
+  profitLoss
 }: SidebarProps) => {
   return (
     <AnimatePresence mode="wait">
@@ -81,6 +91,32 @@ export const Sidebar = ({
                   إضافة عملية جديدة
                 </button>
               )}
+
+              <div className="space-y-2">
+                <p className="ios-section-title">الملخص المالي</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100 flex flex-col items-center justify-center cursor-pointer hover:bg-emerald-100 transition-colors" onClick={() => { setActiveTab('transactions'); onClose(); }}>
+                    <ArrowUpRight className="w-5 h-5 text-emerald-600 mb-1" />
+                    <span className="text-[10px] font-bold text-emerald-600/70 mb-1">الإيرادات</span>
+                    <span className="text-sm font-black text-emerald-700 text-center break-all"><FormattedNumber amount={totals.income} /></span>
+                  </div>
+                  <div className="bg-rose-50 p-3 rounded-xl border border-rose-100 flex flex-col items-center justify-center cursor-pointer hover:bg-rose-100 transition-colors" onClick={() => { setActiveTab('transactions'); onClose(); }}>
+                    <ArrowDownLeft className="w-5 h-5 text-rose-600 mb-1" />
+                    <span className="text-[10px] font-bold text-rose-600/70 mb-1">المصاريف</span>
+                    <span className="text-sm font-black text-rose-700 text-center break-all"><FormattedNumber amount={totals.expense} /></span>
+                  </div>
+                  <div className="bg-amber-50 p-3 rounded-xl border border-amber-100 flex flex-col items-center justify-center cursor-pointer hover:bg-amber-100 transition-colors" onClick={() => { setActiveTab('custody'); onClose(); }}>
+                    <Coins className="w-5 h-5 text-amber-600 mb-1" />
+                    <span className="text-[10px] font-bold text-amber-600/70 mb-1">العهدة</span>
+                    <span className="text-sm font-black text-amber-700 text-center break-all"><FormattedNumber amount={custodyTotal} /></span>
+                  </div>
+                  <div className={`${profitLoss >= 0 ? 'bg-blue-50 border-blue-100' : 'bg-orange-50 border-orange-100'} p-3 rounded-xl border flex flex-col items-center justify-center`}>
+                    <PieChartIcon className={`w-5 h-5 ${profitLoss >= 0 ? 'text-blue-600' : 'text-orange-600'} mb-1`} />
+                    <span className={`text-[10px] font-bold ${profitLoss >= 0 ? 'text-blue-600/70' : 'text-orange-600/70'} mb-1`}>الصافي</span>
+                    <span className={`text-sm font-black ${profitLoss >= 0 ? 'text-blue-700' : 'text-orange-700'} text-center break-all`}><FormattedNumber amount={profitLoss} /></span>
+                  </div>
+                </div>
+              </div>
 
               <div className="space-y-2">
                 <p className="ios-section-title">الرئيسية</p>
