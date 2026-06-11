@@ -3981,6 +3981,11 @@ export default function App() {
               persons={persons}
               custodyAccounts={custodyAccounts}
               formStatus={formStatus}
+              onOpenAddCategory={() => setShowAddCategoryModal(true)}
+              onOpenAddPerson={() => {
+                setEditingPerson(null);
+                setShowPersonsModal(true);
+              }}
             />
           )}
         </AnimatePresence>
@@ -3998,6 +4003,11 @@ export default function App() {
               persons={persons}
               custodyAccounts={custodyAccounts}
               formStatus={formStatus}
+              onOpenAddCategory={() => setShowAddCategoryModal(true)}
+              onOpenAddPerson={() => {
+                setEditingPerson(null);
+                setShowPersonsModal(true);
+              }}
             />
           )}
         </AnimatePresence>

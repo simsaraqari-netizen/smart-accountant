@@ -25,6 +25,8 @@ interface TransactionModalProps {
   persons: any[];
   custodyAccounts: any[];
   onSubmit: (e: React.FormEvent) => void;
+  onOpenAddCategory?: () => void;
+  onOpenAddPerson?: () => void;
 }
 
 export const TransactionModal = ({
@@ -37,7 +39,9 @@ export const TransactionModal = ({
   categories,
   persons,
   custodyAccounts,
-  onSubmit
+  onSubmit,
+  onOpenAddCategory,
+  onOpenAddPerson
 }: TransactionModalProps) => {
   const isAdd = mode === 'add';
 
@@ -171,7 +175,14 @@ export const TransactionModal = ({
               <CollapsibleSection title="المعلومات الأساسية" icon={FileText} defaultExpanded={true} isActive={true} color="blue">
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-[10px] font-black text-gray-400 mb-1 tracking-widest uppercase">الفئة</label>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="block text-[10px] font-black text-gray-400 tracking-widest uppercase">الفئة</label>
+                      {onOpenAddCategory && (
+                        <button type="button" onClick={onOpenAddCategory} className="text-[10px] font-bold text-blue-500 hover:text-blue-600 flex items-center gap-0.5">
+                          <Plus className="w-3 h-3" /> إضافة فئة
+                        </button>
+                      )}
+                    </div>
                     <div className="relative">
                       <input 
                         type="text"
@@ -199,7 +210,14 @@ export const TransactionModal = ({
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black text-gray-400 mb-1 tracking-widest uppercase">الشخص</label>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="block text-[10px] font-black text-gray-400 tracking-widest uppercase">الشخص</label>
+                      {onOpenAddPerson && (
+                        <button type="button" onClick={onOpenAddPerson} className="text-[10px] font-bold text-blue-500 hover:text-blue-600 flex items-center gap-0.5">
+                          <Plus className="w-3 h-3" /> إضافة شخص
+                        </button>
+                      )}
+                    </div>
                     <input 
                       type="text" 
                       list="persons-list"
