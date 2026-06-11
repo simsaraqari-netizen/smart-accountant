@@ -4,7 +4,8 @@ import {
   ChevronLeft, 
   X, 
   Edit2, 
-  Trash2 
+  Trash2,
+  Users
 } from 'lucide-react';
 import { Timestamp, collection, addDoc } from 'firebase/firestore';
 

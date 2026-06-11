@@ -12,7 +12,7 @@ interface CategoryModalProps {
   onAddCategory: (e: React.FormEvent) => void;
   onDeleteCategory: (cat: any) => void;
   onUpdateCategoryType?: (categoryId: string, newType: 'income' | 'expense') => void;
-  onUpdateCategoryName?: (categoryId: string, newName: string, newType: 'income' | 'expense') => void;
+  onUpdateCategoryName?: (categoryId: string, newName: string, newType: 'income' | 'expense', budgetLimit?: number) => void;
 }
 
 export const CategoryModal = ({
@@ -31,10 +31,13 @@ export const CategoryModal = ({
   const [editName, setEditName] = useState('');
   const [editType, setEditType] = useState<'income' | 'expense'>('expense');
 
+  const [editBudgetLimit, setEditBudgetLimit] = useState<string>('');
+
   const startEdit = (cat: any) => {
     setEditingCatId(cat.id);
     setEditName(cat.name);
     setEditType(cat.type);
+    setEditBudgetLimit(cat.budgetLimit ? cat.budgetLimit.toString() : '');
   };
 
   const cancelEdit = () => {
@@ -45,7 +48,7 @@ export const CategoryModal = ({
   const saveEdit = (cat: any) => {
     if (!editName.trim()) return;
     if (onUpdateCategoryName) {
-      onUpdateCategoryName(cat.id, editName.trim(), editType);
+      onUpdateCategoryName(cat.id, editName.trim(), editType, editBudgetLimit ? Number(editBudgetLimit) : undefined);
     } else if (onUpdateCategoryType && editType !== cat.type) {
       onUpdateCategoryType(cat.id, editType);
     }
@@ -115,6 +118,18 @@ export const CategoryModal = ({
                               🟢 ايراد
                             </button>
                           </div>
+
+                          {editType === 'expense' && (
+                            <div className="mt-2">
+                              <input
+                                type="number"
+                                placeholder="الميزانية التقديرية (اختياري)"
+                                value={editBudgetLimit}
+                                onChange={(e) => setEditBudgetLimit(e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold focus:border-emerald-500 outline-none transition-colors"
+                              />
+                            </div>
+                          )}
 
                           {/* Save / Cancel */}
                           <div className="flex gap-2">

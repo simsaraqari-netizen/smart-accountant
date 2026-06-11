@@ -119,7 +119,7 @@ export const PersonProfileModal: React.FC<PersonProfileModalProps> = ({
                     stats.net < 0 ? 'text-rose-600' : 
                     'text-gray-900'
                   }`}>
-                    <FormattedNumber amount={Math.abs(stats.net)} />
+                    <FormattedNumber value={Math.abs(stats.net)} />
                     <span className="text-[10px] font-bold ml-1 text-gray-500">
                       {stats.net > 0 ? 'له' : stats.net < 0 ? 'عليه' : 'متزن'}
                     </span>
@@ -134,14 +134,14 @@ export const PersonProfileModal: React.FC<PersonProfileModalProps> = ({
                     <ArrowUpRight className="w-4 h-4 text-emerald-500" />
                   </div>
                   <p className="text-xs font-bold text-gray-500 mb-1">إجمالي الإيرادات</p>
-                  <p className="text-lg font-black text-emerald-600"><FormattedNumber amount={stats.income} /></p>
+                  <p className="text-lg font-black text-emerald-600"><FormattedNumber value={stats.income} /></p>
                 </div>
                 <div className="bg-white p-4 rounded-2xl border border-rose-100 shadow-sm text-center">
                   <div className="w-8 h-8 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-2">
                     <ArrowDownLeft className="w-4 h-4 text-rose-500" />
                   </div>
                   <p className="text-xs font-bold text-gray-500 mb-1">إجمالي المدفوعات</p>
-                  <p className="text-lg font-black text-rose-600"><FormattedNumber amount={stats.expense} /></p>
+                  <p className="text-lg font-black text-rose-600"><FormattedNumber value={stats.expense} /></p>
                 </div>
               </div>
 
@@ -182,7 +182,7 @@ export const PersonProfileModal: React.FC<PersonProfileModalProps> = ({
                         </div>
                         <div className="text-left print:col-span-2 print:flex print:justify-between print:items-center">
                           <p className={`text-sm font-black print:text-xs ${tx.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                            {tx.type === 'income' ? '+' : '-'}<FormattedNumber amount={tx.amountForPerson} />
+                            {tx.type === 'income' ? '+' : '-'}<FormattedNumber value={tx.amountForPerson} />
                           </p>
                           <p className="text-[10px] font-bold text-gray-400 print:hidden">{tx.category}</p>
                           <p className="hidden print:block text-[10px] text-gray-500">{tx.type === 'income' ? 'ايراد' : 'مصروف'}</p>

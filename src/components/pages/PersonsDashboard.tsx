@@ -151,7 +151,7 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
                   <ArrowUpRight className="w-3 h-3 text-emerald-500" /> ايرادات
                 </span>
                 <span className="text-sm font-black text-emerald-600">
-                  <FormattedNumber amount={person.totalIncome} />
+                  <FormattedNumber value={person.totalIncome} />
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -159,7 +159,7 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
                   <ArrowDownLeft className="w-3 h-3 text-rose-500" /> مدفوعات
                 </span>
                 <span className="text-sm font-black text-rose-600">
-                  <FormattedNumber amount={person.totalExpense} />
+                  <FormattedNumber value={person.totalExpense} />
                 </span>
               </div>
               
@@ -172,7 +172,7 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
                   person.net < 0 ? 'text-rose-600' : 
                   'text-gray-900'
                 }`}>
-                  <FormattedNumber amount={Math.abs(person.net)} />
+                  <FormattedNumber value={Math.abs(person.net)} />
                   <span className="text-[10px] font-bold ml-1 text-gray-500">
                     {person.net > 0 ? 'له' : person.net < 0 ? 'عليه' : 'متزن'}
                   </span>

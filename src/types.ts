@@ -24,6 +24,14 @@ export interface Transaction {
   splits?: TransactionSplit[];
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  type: 'income' | 'expense';
+  tenantId: string;
+  budgetLimit?: number;
+}
+
 export interface CustodyAccount {
   id?: string;
   name: string;
