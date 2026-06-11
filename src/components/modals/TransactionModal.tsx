@@ -4,15 +4,10 @@ import {
   ChevronLeft, 
   ArrowUpRight, 
   ArrowDownLeft, 
-  Coins, 
-  Users, 
-  Calendar, 
-  FileText, 
   Plus,
   Trash2
 } from 'lucide-react';
 import { FormattedNumber } from '../common/FormattedNumber';
-import { CollapsibleSection } from '../common/CollapsibleSection';
 
 interface TransactionModalProps {
   mode: 'add' | 'edit';
@@ -129,7 +124,7 @@ export const TransactionModal = ({
               )}
 
               {/* Amount and Type Section */}
-              <div className="space-y-3">
+              <div className="space-y-4 mb-6">
                 <div className="relative">
                   <input 
                     type="number" 
@@ -137,151 +132,141 @@ export const TransactionModal = ({
                     required
                     value={transaction.amount}
                     onChange={(e) => setTransaction({ ...transaction, amount: e.target.value })}
-                    className="w-full bg-white border-2 border-gray-100 rounded-xl p-3 text-2xl font-black text-center text-gray-900 focus:border-blue-500 transition-all outline-none placeholder:text-gray-200"
+                    className="w-full bg-transparent border-b-2 border-gray-200 p-3 text-3xl font-black text-center text-gray-900 focus:border-gray-800 transition-all outline-none placeholder:text-gray-200"
                     placeholder="0.000"
                     autoFocus
                   />
-                  <div className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-gray-300 text-lg">د.ك</div>
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-gray-300 text-lg">د.ك</div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <button 
                     type="button"
                     onClick={() => setTransaction({ ...transaction, type: 'expense', custodyType: 'custody_out' })}
-                    className={`flex items-center justify-center gap-1 p-2.5 rounded-lg border-2 transition-all duration-300 font-black text-xs ${
+                    className={`flex items-center justify-center gap-1 p-3 rounded-xl border transition-all duration-300 font-bold text-sm ${
                       transaction.type === 'expense' 
-                        ? 'bg-rose-50 border-rose-500 text-rose-600 shadow-sm shadow-rose-100' 
-                        : 'bg-white border-gray-100 text-gray-400 hover:border-gray-200'
+                        ? 'bg-gray-900 border-gray-900 text-white shadow-md' 
+                        : 'bg-transparent border-gray-200 text-gray-500 hover:border-gray-300'
                     }`}
                   >
-                    <ArrowDownLeft className="w-4 h-4" />
+                    <ArrowDownLeft className="w-5 h-5" />
                     مصروف
                   </button>
                   <button 
                     type="button"
                     onClick={() => setTransaction({ ...transaction, type: 'income', custodyType: 'custody_in' })}
-                    className={`flex items-center justify-center gap-1 p-2.5 rounded-lg border-2 transition-all duration-300 font-black text-xs ${
+                    className={`flex items-center justify-center gap-1 p-3 rounded-xl border transition-all duration-300 font-bold text-sm ${
                       transaction.type === 'income' 
-                        ? 'bg-emerald-50 border-emerald-500 text-emerald-600 shadow-sm shadow-emerald-100' 
-                        : 'bg-white border-gray-100 text-gray-400 hover:border-gray-200'
+                        ? 'bg-gray-900 border-gray-900 text-white shadow-md' 
+                        : 'bg-transparent border-gray-200 text-gray-500 hover:border-gray-300'
                     }`}
                   >
-                    <ArrowUpRight className="w-4 h-4" />
+                    <ArrowUpRight className="w-5 h-5" />
                     إيراد
                   </button>
                 </div>
               </div>
 
               {/* Basic Info Section */}
-              <CollapsibleSection title="المعلومات الأساسية" icon={FileText} defaultExpanded={true} isActive={true} color="blue">
-                <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-4 mb-6">
+                <h4 className="text-sm font-bold text-gray-800 border-b pb-2">المعلومات الأساسية</h4>
+                
+                <div className="space-y-4">
                   <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <label className="block text-[10px] font-black text-gray-400 tracking-widest uppercase">الفئة</label>
-                      {onOpenAddCategory && (
-                        <button type="button" onClick={onOpenAddCategory} className="px-2 py-1 bg-blue-50 text-blue-600 rounded-md text-xs font-bold hover:bg-blue-100 flex items-center gap-1 transition-colors">
-                          <Plus className="w-3 h-3" /> إضافة فئة
-                        </button>
-                      )}
-                    </div>
-                    <div className="relative">
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">الفئة</label>
+                    <div className="flex gap-2">
                       <select 
                         required
                         value={transaction.category || ''}
                         onChange={(e) => {
                           setTransaction({ ...transaction, category: e.target.value, isAddingNewCategory: false, newCategoryName: '' });
                         }}
-                        className="w-full bg-white border-2 border-gray-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none"
+                        className="flex-1 bg-transparent border border-gray-200 rounded-xl p-3 text-sm outline-none focus:border-gray-500 transition-colors"
                       >
                         <option value="" disabled>اختر الفئة...</option>
                         {categories.filter(c => c.type === transaction.type || c.type === 'all').map(cat => (
                           <option key={cat.id} value={cat.name}>{cat.name}</option>
                         ))}
                       </select>
+                      {onOpenAddCategory && (
+                        <button type="button" onClick={onOpenAddCategory} className="px-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-100 flex items-center justify-center transition-colors">
+                          <Plus className="w-5 h-5" />
+                        </button>
+                      )}
                     </div>
                   </div>
 
                   <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <label className="block text-[10px] font-black text-gray-400 tracking-widest uppercase">الموظف</label>
-                      {onOpenAddPerson && (
-                        <button type="button" onClick={onOpenAddPerson} className="px-2 py-1 bg-blue-50 text-blue-600 rounded-md text-xs font-bold hover:bg-blue-100 flex items-center gap-1 transition-colors">
-                          <Plus className="w-3 h-3" /> إضافة موظف
-                        </button>
-                      )}
-                    </div>
-                    <div className="relative">
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">الموظف</label>
+                    <div className="flex gap-2">
                       <select 
                         value={transaction.personName || ''}
                         onChange={(e) => setTransaction({ ...transaction, personName: e.target.value })}
-                        className="w-full bg-white border-2 border-gray-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none"
+                        className="flex-1 bg-transparent border border-gray-200 rounded-xl p-3 text-sm outline-none focus:border-gray-500 transition-colors"
                       >
                         <option value="">بدون موظف (اختياري)</option>
                         {persons.map(p => (
                           <option key={p.id} value={p.name}>{p.name}</option>
                         ))}
                       </select>
+                      {onOpenAddPerson && (
+                        <button type="button" onClick={onOpenAddPerson} className="px-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-100 flex items-center justify-center transition-colors">
+                          <Plus className="w-5 h-5" />
+                        </button>
+                      )}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black text-gray-400 mb-1 tracking-widest uppercase">التاريخ</label>
-                    <div className="relative">
-                      <input 
-                        type="date" 
-                        required
-                        value={isAdd ? transaction.date : (transaction.date?.toDate ? transaction.date.toDate().toISOString().split('T')[0] : transaction.date)}
-                        onChange={(e) => setTransaction({ ...transaction, date: e.target.value })}
-                        className="w-full bg-white border-2 border-gray-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none shadow-sm"
-                      />
-                    </div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">التاريخ</label>
+                    <input 
+                      type="date" 
+                      required
+                      value={isAdd ? transaction.date : (transaction.date?.toDate ? transaction.date.toDate().toISOString().split('T')[0] : transaction.date)}
+                      onChange={(e) => setTransaction({ ...transaction, date: e.target.value })}
+                      className="w-full bg-transparent border border-gray-200 rounded-xl p-3 text-sm outline-none focus:border-gray-500 transition-colors"
+                    />
                   </div>
 
-                  <div className="col-span-2">
-                    <label className="block text-[10px] font-black text-gray-400 mb-1 tracking-widest uppercase">الوصف</label>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">الوصف</label>
                     <textarea 
                       value={transaction.description}
                       onChange={(e) => setTransaction({ ...transaction, description: e.target.value })}
-                      rows={1}
-                      className="w-full bg-white border-2 border-gray-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none resize-none"
+                      rows={2}
+                      className="w-full bg-transparent border border-gray-200 rounded-xl p-3 text-sm outline-none focus:border-gray-500 transition-colors resize-none"
                       placeholder="ملاحظات إضافية..."
                     />
                   </div>
                 </div>
-              </CollapsibleSection>
+              </div>
 
               {/* Custody Linking Section */}
-              <CollapsibleSection 
-                title="الربط بعهدة مالية" 
-                icon={Coins} 
-                isActive={transaction.isCustodyLinked} 
-                color="blue"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-1 border-b border-gray-100">
-                    <span className="text-xs font-bold text-gray-700">تفعيل الربط بالعهدة</span>
+              <div className="space-y-4 mb-6">
+                 <div className="flex items-center justify-between border-b pb-2">
+                    <h4 className="text-sm font-bold text-gray-800">الربط بعهدة مالية</h4>
                     <button 
                       type="button"
                       onClick={() => setTransaction({ ...transaction, isCustodyLinked: !transaction.isCustodyLinked })}
-                      className={`w-12 h-6 rounded-full transition-all duration-300 relative ${transaction.isCustodyLinked ? 'bg-blue-600' : 'bg-gray-200'}`}
+                      className={`w-11 h-6 rounded-full transition-all duration-300 relative ${transaction.isCustodyLinked ? 'bg-gray-900' : 'bg-gray-200'}`}
                     >
-                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300 ${transaction.isCustodyLinked ? 'right-7' : 'right-1'}`}></div>
+                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300 ${transaction.isCustodyLinked ? 'right-6' : 'right-1'}`}></div>
                     </button>
                   </div>
 
                   {transaction.isCustodyLinked && (
                     <motion.div 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
                       className="space-y-4 pt-2"
                     >
                       <div>
-                        <label className="block text-[10px] font-black text-gray-400 mb-1 tracking-widest uppercase">حساب العهدة</label>
+                        <label className="block text-xs font-bold text-gray-500 mb-1.5">حساب العهدة</label>
                         <select 
                           required={transaction.isCustodyLinked}
                           value={transaction.custodyAccountId}
                           onChange={(e) => setTransaction({ ...transaction, custodyAccountId: e.target.value })}
-                          className="w-full bg-white border-2 border-blue-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none"
+                          className="w-full bg-transparent border border-gray-200 rounded-xl p-3 text-sm outline-none focus:border-gray-500 transition-colors"
                         >
                           <option value="">اختر الحساب...</option>
                           {custodyAccounts.map(acc => (
@@ -294,10 +279,10 @@ export const TransactionModal = ({
                         <button 
                           type="button"
                           onClick={() => setTransaction({ ...transaction, custodyType: 'custody_out' })}
-                          className={`p-3 rounded-lg border-2 font-black text-[10px] transition-all ${
+                          className={`p-2.5 rounded-xl border text-xs font-bold transition-all ${
                             transaction.custodyType === 'custody_out' 
-                              ? 'bg-rose-50 border-rose-500 text-rose-600' 
-                              : 'bg-white border-gray-100 text-gray-400'
+                              ? 'bg-gray-900 border-gray-900 text-white' 
+                              : 'bg-transparent border-gray-200 text-gray-500'
                           }`}
                         >
                           خصم من العهدة
@@ -305,10 +290,10 @@ export const TransactionModal = ({
                         <button 
                           type="button"
                           onClick={() => setTransaction({ ...transaction, custodyType: 'custody_in' })}
-                          className={`p-3 rounded-lg border-2 font-black text-[10px] transition-all ${
+                          className={`p-2.5 rounded-xl border text-xs font-bold transition-all ${
                             transaction.custodyType === 'custody_in' 
-                              ? 'bg-emerald-50 border-emerald-500 text-emerald-600' 
-                              : 'bg-white border-gray-100 text-gray-400'
+                              ? 'bg-gray-900 border-gray-900 text-white' 
+                              : 'bg-transparent border-gray-200 text-gray-500'
                           }`}
                         >
                           إضافة للعهدة
@@ -316,102 +301,94 @@ export const TransactionModal = ({
                       </div>
 
                       <div>
-                        <label className="block text-[10px] font-black text-gray-400 mb-1 tracking-widest uppercase">مبلغ العهدة</label>
+                        <label className="block text-xs font-bold text-gray-500 mb-1.5">مبلغ العهدة</label>
                         <input 
                           type="number" 
                           step="0.001"
                           required={transaction.isCustodyLinked}
                           value={transaction.custodyAmount}
                           onChange={(e) => setTransaction({ ...transaction, custodyAmount: e.target.value })}
-                          className="w-full bg-white border-2 border-blue-100 rounded-lg p-2 text-xs font-bold text-right focus:border-blue-500 transition-all outline-none"
+                          className="w-full bg-transparent border border-gray-200 rounded-xl p-3 text-sm outline-none focus:border-gray-500 transition-colors"
                           placeholder="اتركه فارغاً ليساوي مبلغ العملية"
                         />
                       </div>
                     </motion.div>
                   )}
-                </div>
-              </CollapsibleSection>
+              </div>
 
               {/* Split Section */}
-              <CollapsibleSection 
-                title="تقسيم المبالغ" 
-                icon={Users} 
-                isActive={transaction.splits && transaction.splits.length > 0} 
-                color="blue"
-              >
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center mb-1">
+              <div className="space-y-4 mb-6">
+                  <div className="flex justify-between items-center border-b pb-2">
+                    <h4 className="text-sm font-bold text-gray-800">تقسيم المبالغ</h4>
                     <button 
                       type="button"
                       onClick={addSplit}
-                      className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-black flex items-center gap-1 hover:bg-blue-100 transition-all"
+                      className="text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-gray-50 transition-all"
                     >
                       <Plus className="w-3 h-3" />
                       إضافة قسم
                     </button>
                   </div>
 
-                  <div className="space-y-3">
+                  {transaction.splits?.length > 0 && (
+                  <div className="space-y-4 pt-2">
                     {transaction.splits?.map((split: any, index: number) => (
-                      <motion.div 
+                      <div 
                         key={index}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="p-2 rounded-lg border border-gray-100 space-y-2 relative group"
+                        className="p-4 rounded-xl border border-gray-200 space-y-4 relative group bg-gray-50/50"
                       >
                         <button 
                           type="button"
                           onClick={() => removeSplit(index)}
-                          className="absolute -left-2 -top-2 w-6 h-6 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-sm"
+                          className="absolute left-3 top-3 text-gray-400 hover:text-rose-500 transition-colors"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
 
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="pr-8">
+                          <label className="block text-xs font-bold text-gray-500 mb-1.5">الموظف</label>
+                          <select 
+                            required
+                            value={split.personName || ''}
+                            onChange={(e) => handleSplitChange(index, 'personName', e.target.value)}
+                            className="w-full bg-white border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-gray-500"
+                          >
+                            <option value="" disabled>اختر الموظف...</option>
+                            {persons.map(p => (
+                              <option key={p.id} value={p.name}>{p.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-[8px] font-black text-gray-400 mb-1 tracking-widest uppercase">الموظف</label>
-                            <select 
-                              required
-                              value={split.personName || ''}
-                              onChange={(e) => handleSplitChange(index, 'personName', e.target.value)}
-                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs font-bold text-right outline-none focus:border-blue-400"
-                            >
-                              <option value="" disabled>اختر الموظف...</option>
-                              {persons.map(p => (
-                                <option key={p.id} value={p.name}>{p.name}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-[8px] font-black text-gray-400 mb-1 tracking-widest uppercase">النسبة (%)</label>
+                            <label className="block text-xs font-bold text-gray-500 mb-1.5">النسبة (%)</label>
                             <input 
                               type="text" 
                               required
                               value={split.percentage === 0 && split.amount === 0 ? '' : split.percentage}
                               onChange={(e) => handleSplitChange(index, 'percentage', e.target.value)}
-                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs font-bold text-right outline-none focus:border-blue-400"
+                              className="w-full bg-white border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-gray-500"
                               placeholder="0"
                             />
                           </div>
                           <div>
-                            <label className="block text-[8px] font-black text-gray-400 mb-1 tracking-widest uppercase">المبلغ</label>
+                            <label className="block text-xs font-bold text-gray-500 mb-1.5">المبلغ</label>
                             <input 
                               type="text" 
                               required
                               value={split.amount === 0 && split.percentage === 0 ? '' : split.amount}
                               onChange={(e) => handleSplitChange(index, 'amount', e.target.value)}
-                              className="w-full bg-white border border-gray-200 rounded-lg p-1.5 text-xs font-bold text-right outline-none focus:border-blue-400"
+                              className="w-full bg-white border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-gray-500"
                               placeholder="0.000"
                             />
                           </div>
                         </div>
-                      </motion.div>
+                      </div>
                     ))}
 
-                    {transaction.splits?.length > 0 && (
-                      <div className="pt-2 border-t border-gray-100 flex justify-between items-center px-1">
-                        <span className="text-[10px] font-bold text-gray-400">إجمالي التقسيم:</span>
-                        <span className={`text-xs font-black ${
+                      <div className="pt-2 flex justify-between items-center px-1">
+                        <span className="text-xs font-bold text-gray-500">إجمالي التقسيم:</span>
+                        <span className={`text-sm font-black ${
                           Math.abs(transaction.splits.reduce((sum: number, s: any) => sum + s.percentage, 0) - 100) < 0.01 
                             ? 'text-emerald-600' 
                             : 'text-rose-600'
@@ -419,20 +396,15 @@ export const TransactionModal = ({
                           {transaction.splits.reduce((sum: number, s: any) => sum + s.percentage, 0)}%
                         </span>
                       </div>
-                    )}
                   </div>
-                </div>
-              </CollapsibleSection>
+                  )}
+              </div>
 
-              <div className="pt-2">
+              <div className="pt-4 mt-auto">
                 <button 
                   type="submit"
                   disabled={formStatus.type === 'loading'}
-                  className={`w-full py-3 rounded-xl font-black text-sm shadow-md transition-all duration-300 disabled:opacity-50 active:scale-[0.98] ${
-                    isAdd 
-                      ? 'bg-emerald-600 text-white shadow-emerald-200 hover:bg-emerald-700' 
-                      : 'bg-blue-600 text-white shadow-blue-200 hover:bg-blue-700'
-                  }`}
+                  className="w-full py-4 rounded-xl font-black text-sm bg-gray-900 text-white shadow-lg shadow-gray-900/20 transition-all duration-300 disabled:opacity-50 active:scale-[0.98] hover:bg-gray-800"
                 >
                   {formStatus.type === 'loading' ? 'جاري الحفظ...' : (isAdd ? 'تسجيل العملية' : 'تحديث العملية')}
                 </button>
