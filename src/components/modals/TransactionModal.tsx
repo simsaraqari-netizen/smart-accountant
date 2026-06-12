@@ -209,10 +209,22 @@ export const TransactionModal = ({
                         newCustodyAmount = newAmount;
                       }
 
+                      let newSplits = transaction.splits;
+                      if (transaction.splitType === 'joint' && transaction.splits && transaction.splits.length > 0) {
+                        const splitAmount = numNewAmount / transaction.splits.length;
+                        const splitPercentage = 100 / transaction.splits.length;
+                        newSplits = transaction.splits.map((s: any) => ({
+                          ...s,
+                          amount: splitAmount === 0 ? '' : parseFloat(splitAmount.toFixed(3)),
+                          percentage: splitPercentage === 0 ? '' : parseFloat(splitPercentage.toFixed(2))
+                        }));
+                      }
+
                       setTransaction({ 
                         ...transaction, 
                         amount: newAmount,
-                        custodyAmount: newCustodyAmount
+                        custodyAmount: newCustodyAmount,
+                        splits: newSplits
                       });
                     }}
                     className="w-full bg-transparent border-b-2 border-gray-200 p-3 text-3xl font-black text-center text-gray-900 focus:border-gray-800 transition-all outline-none placeholder:text-gray-200"
