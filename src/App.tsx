@@ -3093,31 +3093,7 @@ export default function App() {
                       setShowPersonsModal(true);
                     }}
                     onDeletePerson={(person) => {
-                      setConfirmDelete({
-                        isOpen: true,
-                        title: "حذف شخص/جهة",
-                        message: `هل أنت متأكد من حذف ${person.name}؟ لا يمكن التراجع عن هذا الإجراء وسيتم حذف جميع عملياته.`,
-                        onConfirm: () => {
-                          const transactionsToDelete = transactions.filter(
-                            (t) => t.personName === person.name,
-                          );
-                          setTransactions((prev) =>
-                            prev.filter((t) => t.personName !== person.name),
-                          );
-                          pushToHistory({
-                            type: "DELETE_PERSON",
-                            oldData: { ...person },
-                            data: null,
-                          });
-                          setPersons((prev) =>
-                            prev.filter((p) => p.id !== person.id),
-                          );
-                          showToast(
-                            `تم حذف ${person.name} وجميع معاملاته`,
-                            "success",
-                          );
-                        },
-                      });
+                      setConfirmDelete(person);
                     }}
                   />
                 </Suspense>
@@ -3146,25 +3122,8 @@ export default function App() {
           pushToHistory={pushToHistory}
           editingPerson={editingPerson}
           setEditingPerson={setEditingPerson}
-          confirmDelete={confirmDelete}
-          setConfirmDelete={setConfirmDelete}
           onDeletePerson={(person) => {
-            const transactionsToDelete = transactions.filter(
-              (t) => t.personName === person.name,
-            );
-            // Note: In a real app we might want to delete from Firestore too,
-            // but for now keeping the original logic of filtering local state + history
-            setTransactions((prev) =>
-              prev.filter((t) => t.personName !== person.name),
-            );
-            pushToHistory({
-              type: "DELETE_PERSON",
-              oldData: { ...person },
-              data: null,
-            });
-            setPersons((prev) => prev.filter((p) => p.id !== person.id));
-            showToast(`تم حذف ${person.name} وجميع معاملاته`, "success");
-            setConfirmDelete(null);
+            setConfirmDelete(person);
           }}
           onEditPerson={(person, newName) => {
             pushToHistory({
@@ -3213,33 +3172,46 @@ export default function App() {
                     إلغاء
                   </button>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       const personToDelete = confirmDelete;
                       const transactionsToDelete = transactions.filter(
                         (t) => t.personName === personToDelete.name,
                       );
 
-                      // Remove transactions
-                      setTransactions((prev) =>
-                        prev.filter(
-                          (t) => t.personName !== personToDelete.name,
-                        ),
-                      );
+                      try {
+                        // 1. Delete all transactions from Firestore
+                        await Promise.all(
+                          transactionsToDelete.map((t) =>
+                            deleteDoc(doc(db, "transactions", t.id))
+                          )
+                        );
 
-                      // Remove person
-                      pushToHistory({
-                        type: "DELETE_PERSON",
-                        oldData: { ...personToDelete },
-                        data: null,
-                      });
-                      setPersons((prev) =>
-                        prev.filter((p) => p.id !== personToDelete.id),
-                      );
+                        // 2. Delete person from Firestore
+                        await deleteDoc(doc(db, "persons", personToDelete.id));
 
-                      showToast(
-                        `تم حذف ${personToDelete.name} وجميع معاملاته`,
-                        "success",
-                      );
+                        // 3. Local state updates
+                        setTransactions((prev) =>
+                          prev.filter(
+                            (t) => t.personName !== personToDelete.name,
+                          ),
+                        );
+                        pushToHistory({
+                          type: "DELETE_PERSON",
+                          oldData: { ...personToDelete },
+                          data: null,
+                        });
+                        setPersons((prev) =>
+                          prev.filter((p) => p.id !== personToDelete.id),
+                        );
+
+                        showToast(
+                          `تم حذف ${personToDelete.name} وجميع معاملاته بنجاح`,
+                          "success",
+                        );
+                      } catch (error) {
+                        console.error("Error deleting person:", error);
+                        showToast("حدث خطأ أثناء محاولة الحذف", "error");
+                      }
                       setConfirmDelete(null);
                     }}
                     className="flex-1 py-2 rounded-xl font-bold text-sm bg-rose-600 text-white"

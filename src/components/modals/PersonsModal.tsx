@@ -18,8 +18,6 @@ interface PersonsModalProps {
   pushToHistory: (action: any) => void;
   editingPerson: any | null;
   setEditingPerson: (person: any | null) => void;
-  confirmDelete: any | null;
-  setConfirmDelete: (person: any | null) => void;
   onDeletePerson: (person: any) => void;
   onEditPerson: (person: any, newName: string) => void;
 }
@@ -33,8 +31,6 @@ export const PersonsModal = ({
   pushToHistory,
   editingPerson,
   setEditingPerson,
-  confirmDelete,
-  setConfirmDelete,
   onDeletePerson,
   onEditPerson
 }: PersonsModalProps) => {
@@ -164,7 +160,7 @@ export const PersonsModal = ({
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button 
-                              onClick={() => setConfirmDelete(person)}
+                              onClick={() => onDeletePerson(person)}
                               className="text-rose-500 hover:bg-rose-50 p-2 rounded-full transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -175,44 +171,6 @@ export const PersonsModal = ({
                     </div>
                   ))}
                 </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Confirm Delete Modal */}
-      <AnimatePresence>
-        {confirmDelete && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setConfirmDelete(null)}
-              className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6"
-            >
-              <h3 className="text-lg font-black text-gray-900 mb-2">تأكيد الحذف</h3>
-              <p className="text-sm text-gray-500 mb-6">هل أنت متأكد من حذف {confirmDelete.name}؟ لا يمكن التراجع عن هذا الإجراء.</p>
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => setConfirmDelete(null)}
-                  className="flex-1 py-2 rounded-xl font-bold text-sm bg-gray-100 text-gray-700"
-                >
-                  إلغاء
-                </button>
-                <button 
-                  onClick={() => onDeletePerson(confirmDelete)}
-                  className="flex-1 py-2 rounded-xl font-bold text-sm bg-rose-600 text-white"
-                >
-                  حذف
-                </button>
               </div>
             </motion.div>
           </div>
