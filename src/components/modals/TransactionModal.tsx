@@ -91,6 +91,16 @@ export const TransactionModal = ({
     setTransaction({ ...transaction, splits: newSplits });
   };
 
+  const getSelectedPersons = () => {
+    if (transaction.splitType === 'joint' && transaction.splits) {
+      return transaction.splits.map((s: any) => s.personName);
+    }
+    if (transaction.personName) {
+      return [transaction.personName];
+    }
+    return [];
+  };
+
   const recalculateSplitsEqually = (currentSplits: any[]) => {
     if (currentSplits.length === 0) return [];
     const txAmount = parseFloat(transaction.amount?.toString().replace(/,/g, '.').replace(/٫/g, '.')) || 0;
@@ -104,39 +114,49 @@ export const TransactionModal = ({
   };
 
   const togglePersonSplit = (personName: string) => {
-    const currentSplits = transaction.splits || [];
-    const isSelected = currentSplits.some((s: any) => s.personName === personName);
+    const currentSelected = getSelectedPersons();
+    const isSelected = currentSelected.includes(personName);
     
-    let newSplits;
+    let newSelected;
     if (isSelected) {
-      newSplits = currentSplits.filter((s: any) => s.personName !== personName);
+      newSelected = currentSelected.filter((name: string) => name !== personName);
     } else {
-      newSplits = [...currentSplits, { personName, percentage: 0, amount: 0 }];
+      newSelected = [...currentSelected, personName];
     }
     
-    newSplits = recalculateSplitsEqually(newSplits);
-    setTransaction({ ...transaction, splits: newSplits });
-  };
-
-  const toggleAllSplits = () => {
-    const currentSplits = transaction.splits || [];
-    let newSplits;
-    if (currentSplits.length === persons.length) {
-      newSplits = [];
+    if (newSelected.length === 0) {
+      setTransaction({ ...transaction, splitType: 'individual', personName: '', splits: [] });
+    } else if (newSelected.length === 1) {
+      setTransaction({ ...transaction, splitType: 'individual', personName: newSelected[0], splits: [] });
     } else {
-      newSplits = persons.map((p: any) => ({
-        personName: p.name,
+      let newSplits = newSelected.map(name => ({
+        personName: name,
         percentage: 0,
         amount: 0
       }));
       newSplits = recalculateSplitsEqually(newSplits);
+      setTransaction({ ...transaction, splitType: 'joint', personName: '', splits: newSplits });
     }
-    setTransaction({ ...transaction, splits: newSplits });
   };
 
-  const removeSplit = (index: number) => {
-    const newSplits = transaction.splits.filter((_: any, i: number) => i !== index);
-    setTransaction({ ...transaction, splits: newSplits });
+  const toggleAllSplits = () => {
+    const currentSelected = getSelectedPersons();
+    if (currentSelected.length === persons.length) {
+      setTransaction({ ...transaction, splitType: 'individual', personName: '', splits: [] });
+    } else {
+      if (persons.length === 0) return;
+      if (persons.length === 1) {
+         setTransaction({ ...transaction, splitType: 'individual', personName: persons[0].name, splits: [] });
+      } else {
+         let newSplits = persons.map((p: any) => ({
+           personName: p.name,
+           percentage: 0,
+           amount: 0
+         }));
+         newSplits = recalculateSplitsEqually(newSplits);
+         setTransaction({ ...transaction, splitType: 'joint', personName: '', splits: newSplits });
+      }
+    }
   };
 
   return (
@@ -291,26 +311,7 @@ export const TransactionModal = ({
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">الموظف</label>
-                    <div className="flex gap-2">
-                      <select 
-                        value={transaction.personName || ''}
-                        onChange={(e) => setTransaction({ ...transaction, personName: e.target.value })}
-                        className="flex-1 bg-transparent border border-gray-200 rounded-xl p-3 text-sm outline-none focus:border-gray-500 transition-colors"
-                      >
-                        <option value="">بدون موظف (اختياري)</option>
-                        {persons.map(p => (
-                          <option key={p.id} value={p.name}>{p.name}</option>
-                        ))}
-                      </select>
-                      {onOpenAddPerson && (
-                        <button type="button" onClick={onOpenAddPerson} className="px-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-100 flex items-center justify-center transition-colors">
-                          <Plus className="w-5 h-5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
+
 
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1.5">التاريخ</label>
@@ -449,26 +450,32 @@ export const TransactionModal = ({
                   )}
               </div>
 
-              {/* Split Section */}
+              {/* Unified Person Section */}
               <div className="space-y-4 mb-6">
                   <div className="flex justify-between items-center border-b pb-2">
-                    <h4 className="text-sm font-bold text-gray-800">تقسيم المبالغ</h4>
+                    <h4 className="text-sm font-bold text-gray-800">الأشخاص / الجهات المرتبطة</h4>
+                    {onOpenAddPerson && (
+                      <button type="button" onClick={onOpenAddPerson} className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded hover:bg-blue-100 flex items-center gap-1">
+                        <Plus className="w-3 h-3" />
+                        إضافة موظف
+                      </button>
+                    )}
                   </div>
 
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-gray-500">اختر الموظفين المشتركين:</span>
+                      <span className="text-xs font-bold text-gray-500">اختر الموظفين المعنيين بالعملية:</span>
                       <button 
                         type="button"
                         onClick={toggleAllSplits}
                         className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded hover:bg-blue-100"
                       >
-                        {transaction.splits?.length === persons.length ? 'إلغاء تحديد الكل' : 'تحديد الكل'}
+                        {getSelectedPersons().length === persons.length ? 'إلغاء تحديد الكل' : 'تحديد الكل'}
                       </button>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {persons.map((p: any) => {
-                        const isSelected = transaction.splits?.some((s: any) => s.personName === p.name);
+                        const isSelected = getSelectedPersons().includes(p.name);
                         return (
                           <button
                             key={p.id}
@@ -487,22 +494,15 @@ export const TransactionModal = ({
                     </div>
                   </div>
 
-                  {transaction.splits?.length > 0 && (
+                  {transaction.splitType === 'joint' && transaction.splits && transaction.splits.length > 0 && (
                   <div className="space-y-4 pt-4 border-t">
-                    {transaction.splits?.map((split: any, index: number) => (
+                    <div className="text-xs font-bold text-gray-500 mb-2">تفاصيل تقسيم المبالغ (يمكنك تعديلها يدوياً):</div>
+                    {transaction.splits.map((split: any, index: number) => (
                       <div 
                         key={index}
                         className="p-4 rounded-xl border border-gray-200 space-y-4 relative group bg-gray-50/50"
                       >
-                        <button 
-                          type="button"
-                          onClick={() => removeSplit(index)}
-                          className="absolute left-3 top-3 text-gray-400 hover:text-rose-500 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-
-                        <div className="pr-8">
+                        <div className="pr-2">
                           <label className="block text-xs font-bold text-gray-500 mb-1.5">الموظف</label>
                           <div className="w-full bg-white border border-gray-200 rounded-lg p-2.5 text-sm font-bold text-gray-700">
                             {split.personName}
@@ -544,13 +544,12 @@ export const TransactionModal = ({
                             ? 'text-emerald-600' 
                             : 'text-rose-600'
                         }`}>
-                          {transaction.splits.reduce((sum: number, s: any) => sum + s.percentage, 0)}%
+                          {transaction.splits.reduce((sum: number, s: any) => sum + s.percentage, 0).toFixed(2)}%
                         </span>
                       </div>
                   </div>
                   )}
               </div>
-
               <div className="pt-4 mt-auto">
                 <button 
                   type="submit"
