@@ -2732,8 +2732,98 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-right">
+                <div className="overflow-x-auto md:overflow-visible">
+                  {/* Mobile Cards View */}
+                  <div className="md:hidden flex flex-col gap-3">
+                    {filteredTransactionsList.map((tx, index) => {
+                      const custodyAccount = tx.custodyAccountId
+                        ? custodyAccounts.find((acc) => acc.id === tx.custodyAccountId)
+                        : null;
+                      return (
+                        <div key={tx.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-3 relative overflow-hidden">
+                           <div className={`absolute right-0 top-0 bottom-0 w-1 ${tx.type === 'income' ? 'bg-emerald-500' : tx.type === 'expense' ? 'bg-rose-500' : 'bg-amber-500'}`}></div>
+                           
+                           <div className="flex justify-between items-start pl-1">
+                             <div className="flex items-center gap-2">
+                               <span className={`px-2 py-0.5 rounded-2xl text-[10px] font-bold ${tx.type === "income" ? "bg-emerald-50 text-emerald-600" : tx.type === "expense" ? "bg-rose-50 text-rose-600" : "bg-amber-50 text-amber-600"}`}>
+                                  {tx.type === "income" ? "إيراد" : tx.type === "expense" ? "مصروف" : "عهدة"}
+                               </span>
+                               <span className="text-[10px] text-gray-400 font-bold">
+                                 {format(tx.date.toDate(), "d/M/yyyy HH:mm")}
+                               </span>
+                             </div>
+                             {userRole === "admin" && (
+                               <div className="flex items-center gap-1 z-10 relative">
+                                  <button onClick={() => { setEditingTransaction(tx); setShowEditModal(true); }} className="p-1.5 text-gray-400 hover:text-blue-500 bg-gray-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
+                                  <button onClick={() => {
+                                      setConfirmDialog({
+                                        isOpen: true,
+                                        message: "هل أنت متأكد من حذف هذه العملية؟",
+                                        onConfirm: async () => {
+                                          try {
+                                            if (tx.custodyAccountId) {
+                                              const accountRef = doc(db, "custody_accounts", tx.custodyAccountId);
+                                              const balanceChange = tx.type === "income" || tx.type === "custody_in" ? -tx.amount : tx.amount;
+                                              await updateDoc(accountRef, { balance: increment(balanceChange) });
+                                            }
+                                            const { id: _id, ...dataWithoutId } = tx;
+                                            pushToHistory({ type: "DELETE", collection: "transactions", id: tx.id!, data: dataWithoutId });
+                                            await deleteDoc(doc(db, "transactions", tx.id!));
+                                          } catch (err) {
+                                            handleFirestoreError(err, "delete", "transactions");
+                                          }
+                                        },
+                                      });
+                                  }} className="p-1.5 text-gray-400 hover:text-rose-500 bg-gray-50 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+                               </div>
+                             )}
+                           </div>
+                           
+                           <div className="flex justify-between items-center pr-2">
+                             <div className={`font-black text-lg flex flex-col gap-1 ${tx.type === "income" ? "text-emerald-600" : "text-rose-600"}`}>
+                               <div className="flex items-center gap-1">
+                                 <FormattedNumber value={tx.amount} /> <span className="text-xs font-normal opacity-70">د.ك</span>
+                               </div>
+                               {custodyAccount && (
+                                 <span className="text-[9px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded flex items-center gap-1 w-fit"><Coins className="w-3 h-3 text-amber-500" /> {custodyAccount.name}</span>
+                               )}
+                             </div>
+                             <span className="text-xs font-bold text-gray-700 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">
+                               {tx.category}
+                             </span>
+                           </div>
+
+                           <div className="flex flex-col gap-2 pr-2 border-t border-gray-50 pt-2 mt-1">
+                              <div className="font-bold text-xs text-emerald-600">
+                               {tx.splits && tx.splits.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    <div className="flex items-center gap-1 w-full mb-1">
+                                      <Users className="w-3 h-3 opacity-60" />
+                                      <span className="text-[10px] text-gray-400">مقسم على {tx.splits.length}</span>
+                                    </div>
+                                    {tx.splits.map((s: any, i: number) => (
+                                      <span key={i} className="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded text-[9px] border border-emerald-100 flex items-center gap-1">
+                                        <span className="font-black">{s.personName}:</span>
+                                        <FormattedNumber value={s.amount} />
+                                        <span className="text-[8px] opacity-60">({s.percentage?.toFixed(0)}%)</span>
+                                      </span>
+                                    ))}
+                                  </div>
+                               ) : (
+                                 tx.personName || <span className="text-gray-400 font-normal">بدون موظف</span>
+                               )}
+                              </div>
+                              {tx.description && (
+                                <p className="text-[11px] text-gray-500 leading-relaxed">{tx.description}</p>
+                              )}
+                           </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <table className="hidden md:table w-full text-right">
                     <thead>
                       <tr className="bg-gray-100/50 text-gray-600 text-[11px] font-bold uppercase tracking-wider border-b border-gray-200">
                         <th className="px-4 py-2 font-bold">التاريخ</th>
