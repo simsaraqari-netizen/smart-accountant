@@ -14,3 +14,4 @@ node_modules/
 dist/
 .vercel
 serviceAccountKey.json
+.env*.local

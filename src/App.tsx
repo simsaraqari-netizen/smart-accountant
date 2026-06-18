@@ -362,26 +362,7 @@ export default function App() {
   });
 
   const generatePDFReport = async () => {
-    setIsGeneratingPDF(true);
-    try {
-      const { exportToPDF } = await import("./utils/pdfUtils");
-      const success = await exportToPDF(
-        "pdf-report-template",
-        "تقرير_المحاسب_الذكي",
-      );
-      if (success) {
-        showToast("تم حفظ التقرير كملف PDF بنجاح", "success");
-      } else {
-        throw new Error("PDF Generation failed");
-      }
-    } catch (error) {
-      console.error("PDF Error:", error);
-      showToast("فشل إنشاء ملف PDF، يرجى المحاولة مرة أخرى.", "error");
-      // Fallback to native print if PDF generation fails
-      window.print();
-    } finally {
-      setIsGeneratingPDF(false);
-    }
+    window.print();
   };
   const [formStatus, setFormStatus] = useState<{
     type: "success" | "error" | "loading" | null;
@@ -1242,7 +1223,10 @@ export default function App() {
   };
 
   const handleManualSyncToSheets = async () => {
-    if (userRole !== "admin") return;
+    if (userRole !== "admin") {
+      alert("عذراً، هذه الميزة متاحة للمشرفين فقط.");
+      return;
+    }
     if (!sheetUrl) {
       alert("يرجى ضبط رابط المزامنة في الإعدادات أولاً");
       return;
@@ -1256,7 +1240,10 @@ export default function App() {
   };
 
   const syncFromSheets = async () => {
-    if (userRole !== "admin") return;
+    if (userRole !== "admin") {
+      alert("عذراً، هذه الميزة متاحة للمشرفين فقط.");
+      return;
+    }
     if (!sheetUrl) {
       alert("يرجى ضبط رابط المزامنة في الإعدادات أولاً");
       return;
@@ -2462,7 +2449,7 @@ export default function App() {
                 ) : (
                   <Printer className="w-4 h-4 text-emerald-600" />
                 )}
-                تصدير PDF
+                طباعة / PDF
               </button>
             </div>
           </div>
@@ -2713,21 +2700,21 @@ export default function App() {
                       onClick={handleManualSyncToSheets}
                       disabled={isSyncing}
                       className="flex-1 sm:flex-none bg-emerald-50 text-emerald-600 px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-emerald-100 transition-colors disabled:opacity-50"
-                      title="تصدير للجدول (Google Sheets)"
+                      title="إرسال البيانات إلى جدول جوجل (Google Sheets)"
                     >
                       <ArrowUpRight className="w-4 h-4" />
-                      مزامنة (صعود)
+                      إرسال للجدول
                     </button>
                     <button
                       onClick={syncFromSheets}
                       disabled={isSyncing}
                       className="flex-1 sm:flex-none bg-blue-50 text-blue-600 px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors disabled:opacity-50"
-                      title="مزامنة من الجدول (Google Sheets)"
+                      title="استرجاع البيانات من جدول جوجل (Google Sheets)"
                     >
                       <ArrowDownLeft
                         className={`w-4 h-4 ${isSyncing ? "animate-bounce" : ""}`}
                       />
-                      مزامنة (نزول)
+                      استرجاع من الجدول
                     </button>
                   </div>
                 </div>
