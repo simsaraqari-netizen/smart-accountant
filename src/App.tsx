@@ -1628,7 +1628,7 @@ export default function App() {
         budgetLimit: newCategory.budgetLimit
           ? Number(newCategory.budgetLimit)
           : null,
-        userId: user.uid,
+        userId: tenantId,
         tenantId: tenantId,
       });
       setNewCategory({ name: "", type: "expense", budgetLimit: "" });

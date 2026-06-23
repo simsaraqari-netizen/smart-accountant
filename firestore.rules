@@ -131,10 +131,12 @@ service cloud.firestore {
     }
 
     function isValidCategory(data) {
-      return data.keys().hasOnly(['name', 'type', 'userId']) &&
+      return data.keys().hasOnly(['name', 'type', 'userId', 'budgetLimit', 'tenantId']) &&
              data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
              data.type in ['income', 'expense'] &&
-             data.userId is string;
+             data.userId is string &&
+             (!('budgetLimit' in data) || data.budgetLimit == null || data.budgetLimit is number) &&
+             (!('tenantId' in data) || data.tenantId is string);
     }
 
     function isValidPerson(data) {
