@@ -131,8 +131,7 @@ service cloud.firestore {
     }
 
     function isValidCategory(data) {
-      return data.keys().hasOnly(['name', 'type', 'userId', 'budgetLimit', 'tenantId']) &&
-             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
              data.type in ['income', 'expense'] &&
              data.userId is string &&
              (!('budgetLimit' in data) || data.budgetLimit == null || data.budgetLimit is number) &&
@@ -219,10 +218,10 @@ service cloud.firestore {
     }
 
     match /categories/{categoryId} {
-      allow read: if isAuthenticated() && belongsToTenant(resource.data);
-      allow create: if isAuthenticated() && isAuthorizedAdmin() && belongsToTenant(request.resource.data) && isValidCategory(request.resource.data);
-      allow update: if isAuthenticated() && isAuthorizedAdmin() && belongsToTenant(resource.data) && belongsToTenant(request.resource.data) && isValidCategory(request.resource.data) && areImmutableFieldsUnchanged(['userId']);
-      allow delete: if isAuthenticated() && isAuthorizedAdmin() && belongsToTenant(resource.data);
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isAuthorizedAdmin() && isValidCategory(request.resource.data);
+      allow update: if isAuthenticated() && isAuthorizedAdmin() && isValidCategory(request.resource.data);
+      allow delete: if isAuthenticated() && isAuthorizedAdmin();
     }
 
     match /persons/{personId} {
