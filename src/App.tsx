@@ -1619,26 +1619,46 @@ export default function App() {
 
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCategory.name.trim() || !user || !tenantId) return;
+    console.log("=== handleAddCategory START ===");
+    console.log("user:", user?.uid, "email:", user?.email);
+    console.log("tenantId:", tenantId);
+    console.log("userRole:", userRole);
+    console.log("newCategory:", newCategory);
+
+    if (!newCategory.name.trim() || !user || !tenantId) {
+      console.error("BLOCKED: missing name, user, or tenantId", {
+        name: newCategory.name.trim(),
+        user: !!user,
+        tenantId,
+      });
+      return;
+    }
+
+    const docData = {
+      name: newCategory.name.trim(),
+      type: newCategory.type,
+      userId: tenantId,
+      ...(newCategory.budgetLimit
+        ? { budgetLimit: Number(newCategory.budgetLimit) }
+        : {}),
+    };
+
+    console.log("Sending to Firestore:", docData);
 
     try {
-      await addDoc(collection(db, "categories"), {
-        name: newCategory.name.trim(),
-        type: newCategory.type,
-        budgetLimit: newCategory.budgetLimit
-          ? Number(newCategory.budgetLimit)
-          : null,
-        userId: tenantId,
-        tenantId: tenantId,
-      });
+      const ref = await addDoc(collection(db, "categories"), docData);
+      console.log("✅ Category added successfully! ID:", ref.id);
       setNewCategory({ name: "", type: "expense", budgetLimit: "" });
       setShowAddCategoryModal(false);
       showToast("تمت إضافة الفئة بنجاح", "success");
-    } catch (error) {
-      console.error("Error adding category:", error);
-      showToast("فشل إضافة الفئة", "error");
+    } catch (error: any) {
+      console.error("❌ Error adding category:", error);
+      console.error("Error code:", error?.code);
+      console.error("Error message:", error?.message);
+      showToast("فشل إضافة الفئة: " + (error?.message || "خطأ غير معروف"), "error");
     }
   };
+
 
   const handleUpdateCategoryName = async (
     categoryId: string,
