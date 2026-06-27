@@ -1619,20 +1619,7 @@ export default function App() {
 
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("=== handleAddCategory START ===");
-    console.log("user:", user?.uid, "email:", user?.email);
-    console.log("tenantId:", tenantId);
-    console.log("userRole:", userRole);
-    console.log("newCategory:", newCategory);
-
-    if (!newCategory.name.trim() || !user || !tenantId) {
-      console.error("BLOCKED: missing name, user, or tenantId", {
-        name: newCategory.name.trim(),
-        user: !!user,
-        tenantId,
-      });
-      return;
-    }
+    if (!newCategory.name.trim() || !user || !tenantId) return;
 
     const docData = {
       name: newCategory.name.trim(),
@@ -1643,18 +1630,13 @@ export default function App() {
         : {}),
     };
 
-    console.log("Sending to Firestore:", docData);
-
     try {
-      const ref = await addDoc(collection(db, "categories"), docData);
-      console.log("✅ Category added successfully! ID:", ref.id);
+      await addDoc(collection(db, "categories"), docData);
       setNewCategory({ name: "", type: "expense", budgetLimit: "" });
       setShowAddCategoryModal(false);
       showToast("تمت إضافة الفئة بنجاح", "success");
     } catch (error: any) {
-      console.error("❌ Error adding category:", error);
-      console.error("Error code:", error?.code);
-      console.error("Error message:", error?.message);
+      console.error("Error adding category:", error);
       showToast("فشل إضافة الفئة: " + (error?.message || "خطأ غير معروف"), "error");
     }
   };
@@ -1972,142 +1954,81 @@ export default function App() {
       return;
     }
 
+    const amount = parseFloat(newTx.amount);
+    const custodyAmount = parseFloat(newTx.custodyAmount) || 0;
+
+    if (isNaN(amount) || amount <= 0) {
+      setFormStatus({
+        type: "error",
+        message: "يرجى إدخال مبلغ صالح (أكبر من الصفر).",
+      });
+      return;
+    }
+
+    let finalPersonName =
+      newTx.splitType === "individual"
+        ? newTx.isAddingNewPerson
+          ? newTx.newPersonName
+          : newTx.personName
+        : "";
+    let finalSplits =
+      newTx.splitType === "joint"
+        ? newTx.splits.filter((s) => s.personName && s.amount > 0)
+        : [];
+
+    if (newTx.splitType === "joint") {
+      if (finalSplits.length === 0) {
+        setFormStatus({ type: "error", message: "يرجى إضافة شخص واحد على الأقل للتقسيم." });
+        return;
+      }
+      const splitTotal = finalSplits.reduce((sum, s) => sum + s.amount, 0);
+      if (Math.abs(splitTotal - amount) > 0.01) {
+        setFormStatus({ type: "error", message: "إجمالي مبالغ التقسيم يجب أن يساوي مبلغ العملية." });
+        return;
+      }
+    }
+
     setFormStatus({ type: "loading", message: "جاري الحفظ..." });
 
     try {
-      let finalCategory = newTx.category;
-      let finalCustodyAccountId = newTx.custodyAccountId;
-      
-      // Auto-create "حساب الشركة" if no accounts exist and none is selected
-      if (newTx.isCustodyLinked && !finalCustodyAccountId && custodyAccounts.length === 0) {
-        const newAccountRef = await addDoc(collection(db, "custody_accounts"), {
-          name: "حساب الشركة",
-          balance: 0,
-          userId: tenantId,
-          createdAt: Timestamp.now(),
-        });
-        finalCustodyAccountId = newAccountRef.id;
-      }
-      
-      let finalPersonName =
-        newTx.splitType === "individual"
-          ? newTx.isAddingNewPerson
-            ? newTx.newPersonName
-            : newTx.personName
-          : "";
-      let finalSplits =
-        newTx.splitType === "joint"
-          ? newTx.splits.filter((s) => s.personName && s.amount > 0)
-          : [];
+      // ─── Run independent pre-saves in PARALLEL ───────────────────────────
+      const newPeopleNames = new Set<string>();
+      if (finalPersonName) newPeopleNames.add(finalPersonName);
+      finalSplits.forEach((s) => { if (s.personName) newPeopleNames.add(s.personName); });
 
-      // Validation for joint transactions
-      if (newTx.splitType === "joint") {
-        if (finalSplits.length === 0) {
-          setFormStatus({
-            type: "error",
-            message: "يرجى إضافة شخص واحد على الأقل للتقسيم.",
-          });
-          return;
-        }
-        const splitTotal = finalSplits.reduce((sum, s) => sum + s.amount, 0);
-        const totalAmount = parseFloat(newTx.amount);
-        if (Math.abs(splitTotal - totalAmount) > 0.01) {
-          setFormStatus({
-            type: "error",
-            message: "إجمالي مبالغ التقسيم يجب أن يساوي مبلغ العملية.",
-          });
-          return;
-        }
-      }
+      const peopleToCreate = Array.from(newPeopleNames).filter(
+        (pName) => !persons.some((p) => p.name.toLowerCase() === pName.toLowerCase())
+      );
 
-      // 1. Handle New Category
-      if (newTx.isAddingNewCategory && newTx.newCategoryName) {
-        const categoryData = {
-          name: newTx.newCategoryName,
-          type: newTx.type === "income" ? "income" : "expense",
-          userId: tenantId,
-        };
-        const catRef = await addDoc(collection(db, "categories"), categoryData);
+      const [categoryResult, accountResult] = await Promise.all([
+        // 1. New Category (if needed)
+        newTx.isAddingNewCategory && newTx.newCategoryName
+          ? addDoc(collection(db, "categories"), {
+              name: newTx.newCategoryName,
+              type: newTx.type === "income" ? "income" : "expense",
+              userId: tenantId,
+            })
+          : Promise.resolve(null),
 
-        pushToHistory({
-          type: "ADD",
-          collection: "categories",
-          id: catRef.id,
-          data: categoryData,
-        });
+        // 2. New Custody Account or auto-create (if needed)
+        newTx.isCustodyLinked && !newTx.custodyAccountId && newTx.isAddingNewAccount && newTx.newAccountName
+          ? addDoc(collection(db, "custody_accounts"), { name: newTx.newAccountName, balance: 0, userId: tenantId })
+          : newTx.isCustodyLinked && !newTx.custodyAccountId && custodyAccounts.length === 0
+          ? addDoc(collection(db, "custody_accounts"), { name: "حساب الشركة", balance: 0, userId: tenantId })
+          : Promise.resolve(null),
+      ]);
 
-        finalCategory = newTx.newCategoryName;
-      }
+      // 3. New People in parallel
+      await Promise.all(
+        peopleToCreate.map((pName) =>
+          addDoc(collection(db, "persons"), { name: pName, userId: tenantId, createdAt: Timestamp.now() })
+        )
+      );
 
-      // 2. Handle New Custody Account
-      if (
-        newTx.isCustodyLinked &&
-        newTx.isAddingNewAccount &&
-        newTx.newAccountName
-      ) {
-        const accountData = {
-          name: newTx.newAccountName,
-          balance: 0, // Initial balance is 0, will be updated by the transaction if needed
-          userId: tenantId,
-        };
-        const accRef = await addDoc(
-          collection(db, "custody_accounts"),
-          accountData,
-        );
+      const finalCategory = categoryResult ? newTx.newCategoryName : newTx.category;
+      const finalCustodyAccountId = accountResult?.id || newTx.custodyAccountId;
 
-        pushToHistory({
-          type: "ADD",
-          collection: "custody_accounts",
-          id: accRef.id,
-          data: accountData,
-        });
-
-        finalCustodyAccountId = accRef.id;
-      }
-
-      // 3. Handle New People (Main and Splits)
-      const allPeopleNames = new Set<string>();
-      if (finalPersonName) allPeopleNames.add(finalPersonName);
-      finalSplits.forEach((s) => {
-        if (s.personName) allPeopleNames.add(s.personName);
-      });
-
-      for (const pName of Array.from(allPeopleNames)) {
-        const personExists = persons.some(
-          (p) => p.name.toLowerCase() === pName.toLowerCase(),
-        );
-        if (!personExists) {
-          const personData = {
-            name: pName,
-            userId: tenantId,
-            createdAt: Timestamp.now(),
-          };
-          const personRef = await addDoc(collection(db, "persons"), personData);
-
-          pushToHistory({
-            type: "ADD",
-            collection: "persons",
-            id: personRef.id,
-            data: personData,
-          });
-        }
-      }
-
-      const amount = parseFloat(newTx.amount);
-      const custodyAmount = parseFloat(newTx.custodyAmount) || 0;
-
-      if (isNaN(amount) || amount <= 0) {
-        setFormStatus({
-          type: "error",
-          message: "يرجى إدخال مبلغ صالح (أكبر من الصفر).",
-        });
-        return;
-      }
-
-      if (newTx.isCustodyLinked && isNaN(custodyAmount)) {
-        setFormStatus({ type: "error", message: "يرجى إدخال مبلغ عهدة صالح." });
-        return;
-      }
+      // ─── Main transaction ─────────────────────────────────────────────────
       const transactionData: any = {
         amount,
         type: newTx.type,
@@ -2117,45 +2038,26 @@ export default function App() {
         date: Timestamp.now(),
         userId: tenantId,
         isCustodyLinked: newTx.isCustodyLinked || false,
-        custodyAmount: parseFloat(newTx.custodyAmount) || 0,
+        custodyAmount,
         splits: finalSplits,
         splitType: newTx.splitType,
       };
+      if (finalCustodyAccountId) transactionData.custodyAccountId = finalCustodyAccountId;
 
-      if (finalCustodyAccountId) {
-        transactionData.custodyAccountId = finalCustodyAccountId;
-      }
+      // Save transaction + update custody balance IN PARALLEL
+      const [txRef] = await Promise.all([
+        addDoc(collection(db, "transactions"), transactionData),
+        // Update custody balance at the same time
+        finalCustodyAccountId && custodyAmount !== 0
+          ? updateDoc(doc(db, "custody_accounts", finalCustodyAccountId), {
+              balance: increment(
+                newTx.type === "income" || newTx.type === "custody_in" ? custodyAmount : -custodyAmount
+              ),
+            })
+          : Promise.resolve(null),
+      ]);
 
-      // 4. Add the transaction
-      const txRef = await addDoc(
-        collection(db, "transactions"),
-        transactionData,
-      );
-
-      // Push to history
-      pushToHistory({
-        type: "ADD",
-        collection: "transactions",
-        id: txRef.id,
-        data: transactionData,
-      });
-
-      // 5. If it's linked to a custody account, update the balance
-      if (finalCustodyAccountId) {
-        const accountRef = doc(db, "custody_accounts", finalCustodyAccountId);
-        const cAmount = parseFloat(newTx.custodyAmount) || 0;
-
-        if (cAmount !== 0) {
-          // Income or custody_in increases balance, expense or custody_out decreases it
-          const isPositive =
-            newTx.type === "income" || newTx.type === "custody_in";
-          const balanceChange = isPositive ? cAmount : -cAmount;
-
-          await updateDoc(accountRef, {
-            balance: increment(balanceChange),
-          });
-        }
-      }
+      pushToHistory({ type: "ADD", collection: "transactions", id: txRef.id, data: transactionData });
 
       setFormStatus({ type: "success", message: "تمت إضافة العملية بنجاح!" });
       setTimeout(() => {
@@ -2169,7 +2071,7 @@ export default function App() {
           date: new Date().toISOString().split("T")[0],
           custodyAccountId: "",
           custodyAmount: "",
-    custodyAmountPercentage: "100",
+          custodyAmountPercentage: "100",
           custodyType: "custody_out",
           personName: "",
           isCustodyLinked: true,
@@ -2179,7 +2081,7 @@ export default function App() {
           isAddingNewAccount: false,
         });
         setActiveTab("dashboard");
-      }, 1500);
+      }, 500);
     } catch (error: any) {
       console.error("Add Transaction Error:", error);
       handleFirestoreError(error, "create", "transactions");
@@ -2189,6 +2091,8 @@ export default function App() {
       });
     }
   };
+
+
 
   const availableMonths = useMemo(() => {
     const months = new Set<string>();
