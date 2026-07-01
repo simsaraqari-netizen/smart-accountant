@@ -85,6 +85,7 @@ import {
   getDoc,
   getDocs,
   increment,
+  writeBatch,
 } from "firebase/firestore";
 import {
   Transaction,
@@ -282,6 +283,9 @@ export default function App() {
   }>({ name: "", type: "expense", budgetLimit: "" });
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [showRemindersModal, setShowRemindersModal] = useState(false);
+  
+  // Bulk Delete State
+  const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
 
   // Form States
   const [showAddModal, setShowAddModal] = useState(false);
@@ -2643,6 +2647,59 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* Bulk Actions Bar */}
+                {selectedTransactions.length > 0 && userRole === "admin" && (
+                  <div className="bg-rose-50/50 border-b border-rose-100 px-4 py-3 flex items-center justify-between">
+                    <span className="text-sm font-bold text-rose-700">
+                      تم تحديد ({selectedTransactions.length}) عملية
+                    </span>
+                    <button
+                      onClick={() => {
+                        setConfirmDialog({
+                          isOpen: true,
+                          message: `هل أنت متأكد من حذف ${selectedTransactions.length} عملية بشكل نهائي؟`,
+                          onConfirm: async () => {
+                            setFormStatus({ type: "loading", message: "جاري الحذف..." });
+                            try {
+                              const batch = writeBatch(db);
+                              
+                              for (const txId of selectedTransactions) {
+                                const tx = transactions.find((t) => t.id === txId);
+                                if (!tx) continue;
+                                
+                                if (tx.custodyAccountId) {
+                                  const accountRef = doc(db, "custody_accounts", tx.custodyAccountId);
+                                  const balanceChange = tx.type === "income" || tx.type === "custody_in" ? -tx.amount : tx.amount;
+                                  batch.update(accountRef, { balance: increment(balanceChange) });
+                                }
+                                
+                                const { id: _id, ...dataWithoutId } = tx;
+                                pushToHistory({ type: "DELETE", collection: "transactions", id: tx.id!, data: dataWithoutId });
+                                
+                                const txRef = doc(db, "transactions", txId);
+                                batch.delete(txRef);
+                              }
+                              
+                              await batch.commit();
+                              setSelectedTransactions([]);
+                              showToast("تم حذف العمليات المحددة بنجاح", "success");
+                            } catch (error) {
+                              console.error("Bulk delete error", error);
+                              showToast("حدث خطأ أثناء الحذف", "error");
+                            } finally {
+                              setFormStatus({ type: null, message: null });
+                            }
+                          },
+                        });
+                      }}
+                      className="bg-rose-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-rose-700 transition-colors flex items-center gap-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      حذف المحدد
+                    </button>
+                  </div>
+                )}
+
                 <div className="overflow-x-auto md:overflow-visible">
                   {/* Mobile Cards View */}
                   <div className="md:hidden flex flex-col gap-3">
@@ -2650,12 +2707,28 @@ export default function App() {
                       const custodyAccount = tx.custodyAccountId
                         ? custodyAccounts.find((acc) => acc.id === tx.custodyAccountId)
                         : null;
+                      const isSelected = selectedTransactions.includes(tx.id!);
                       return (
-                        <div key={tx.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-3 relative overflow-hidden">
+                        <div key={tx.id} className={`bg-white p-4 rounded-xl border ${isSelected ? 'border-emerald-400 shadow-md ring-1 ring-emerald-400' : 'border-gray-100 shadow-sm'} flex flex-col gap-3 relative overflow-hidden transition-all cursor-pointer`} onClick={() => {
+                          if (userRole === "admin") {
+                            setSelectedTransactions(prev => 
+                              prev.includes(tx.id!) ? prev.filter(id => id !== tx.id!) : [...prev, tx.id!]
+                            );
+                          }
+                        }}>
                            <div className={`absolute right-0 top-0 bottom-0 w-1 ${tx.type === 'income' ? 'bg-emerald-500' : tx.type === 'expense' ? 'bg-rose-500' : 'bg-amber-500'}`}></div>
                            
                            <div className="flex justify-between items-start pl-1">
                              <div className="flex items-center gap-2">
+                               {userRole === "admin" && (
+                                 <input 
+                                   type="checkbox" 
+                                   checked={isSelected}
+                                   onChange={() => {}} // Handled by parent div
+                                   className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500"
+                                   onClick={(e) => e.stopPropagation()}
+                                 />
+                               )}
                                <span className={`px-2 py-0.5 rounded-2xl text-[10px] font-bold ${tx.type === "income" ? "bg-emerald-50 text-emerald-600" : tx.type === "expense" ? "bg-rose-50 text-rose-600" : "bg-amber-50 text-amber-600"}`}>
                                   {tx.type === "income" ? "إيراد" : tx.type === "expense" ? "مصروف" : "عهدة"}
                                </span>
@@ -2737,6 +2810,22 @@ export default function App() {
                   <table className="hidden md:table w-full text-right">
                     <thead>
                       <tr className="bg-gray-100/50 text-gray-600 text-[11px] font-bold uppercase tracking-wider border-b border-gray-200">
+                        {userRole === "admin" && (
+                          <th className="px-4 py-2 w-10">
+                            <input 
+                              type="checkbox" 
+                              checked={selectedTransactions.length === filteredTransactionsList.length && filteredTransactionsList.length > 0}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedTransactions(filteredTransactionsList.map(tx => tx.id!));
+                                } else {
+                                  setSelectedTransactions([]);
+                                }
+                              }}
+                              className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500"
+                            />
+                          </th>
+                        )}
                         <th className="px-4 py-2 font-bold">التاريخ</th>
                         <th className="px-4 py-2 font-bold">الموظف</th>
                         <th className="px-4 py-2 font-bold">المبلغ</th>
@@ -2753,13 +2842,28 @@ export default function App() {
                               (acc) => acc.id === tx.custodyAccountId,
                             )
                           : null;
+                        const isSelected = selectedTransactions.includes(tx.id!);
                         return (
                           <tr
                             key={tx.id}
                             className={`transition-all duration-200 ${
-                              index % 2 === 0 ? "bg-white" : "bg-gray-50/60"
+                              isSelected ? "bg-emerald-50/60" : index % 2 === 0 ? "bg-white" : "bg-gray-50/60"
                             } hover:bg-emerald-50/60 group border-b border-gray-50 last:border-0`}
                           >
+                            {userRole === "admin" && (
+                              <td className="px-4 py-2">
+                                <input 
+                                  type="checkbox" 
+                                  checked={isSelected}
+                                  onChange={() => {
+                                    setSelectedTransactions(prev => 
+                                      prev.includes(tx.id!) ? prev.filter(id => id !== tx.id!) : [...prev, tx.id!]
+                                    );
+                                  }}
+                                  className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer"
+                                />
+                              </td>
+                            )}
                             <td className="px-4 py-2 text-[11px] text-gray-600">
                               <div className="flex flex-col">
                                 <span className="font-bold text-gray-900">
