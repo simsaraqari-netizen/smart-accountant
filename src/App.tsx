@@ -254,6 +254,8 @@ const CustomMenuIcon = ({ className }: { className?: string }) => (
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  // Ref for toast timer to prevent memory leak on unmount
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [custodyAccounts, setCustodyAccounts] = useState<CustodyAccount[]>([]);
   const [activeTab, setActiveTab] = useState<
@@ -297,12 +299,7 @@ export default function App() {
     null,
   );
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [newReminderTitle, setNewReminderTitle] = useState("");
-  const [newReminderDueDate, setNewReminderDueDate] = useState("");
-  const [newReminderIsRecurring, setNewReminderIsRecurring] = useState(false);
-  const [newReminderFrequency, setNewReminderFrequency] = useState<
-    "daily" | "weekly" | "monthly" | "yearly"
-  >("monthly");
+  // Reminder states managed by RemindersModal internally
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [vapidKey, setVapidKey] = useState("");
   const [copied, setCopied] = useState(false);
@@ -366,7 +363,12 @@ export default function App() {
   });
 
   const generatePDFReport = async () => {
-    window.print();
+    setIsGeneratingPDF(true);
+    try {
+      window.print();
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
   const [formStatus, setFormStatus] = useState<{
     type: "success" | "error" | "loading" | null;
@@ -403,7 +405,6 @@ export default function App() {
   // Email Auth States
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -468,6 +469,7 @@ export default function App() {
     isDrawerOpen,
     confirmDialog.isOpen,
     showAccountModal,
+    showUserManagementModal, // Fix: was missing, causing stale closure for back button
   ]);
 
   useEffect(() => {
@@ -747,8 +749,13 @@ export default function App() {
     type: "success" | "info" | "error" = "success",
   ) => {
     setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
+    // Fix: clear previous timer before setting a new one to prevent memory leaks
+    clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(null), 3000);
   };
+
+  // Fix: cleanup toast timer on unmount to prevent setState on unmounted component
+  useEffect(() => () => clearTimeout(toastTimerRef.current), []);
 
   const handleUndo = async () => {
     if (historyState.pointer < 0 || userRole !== "admin") return;
@@ -1145,9 +1152,10 @@ export default function App() {
             id: doc.id,
             ...doc.data(),
           }));
+          // Fix: always update categories state, seed only if needed
+          setCategories(cats);
           if (cats.length === 0 && !isSeeding && userRole === "admin") {
             setIsSeeding(true);
-            // Seed initial categories
             const initialCats = [
               { name: "راتب", type: "income", userId: tenantId },
               { name: "مبيعات", type: "income", userId: tenantId },
@@ -1159,8 +1167,7 @@ export default function App() {
               { name: "مواصلات", type: "expense", userId: tenantId },
               { name: "أخرى", type: "expense", userId: tenantId },
             ];
-
-            const seed = async () => {
+            (async () => {
               try {
                 for (const cat of initialCats) {
                   await addDoc(collection(db, "categories"), cat);
@@ -1168,11 +1175,10 @@ export default function App() {
               } catch (err) {
                 console.error("Seeding Error:", err);
                 handleFirestoreError(err, "create", "categories");
+              } finally {
+                setIsSeeding(false);
               }
-            };
-            seed();
-          } else {
-            setCategories(cats);
+            })();
           }
         },
         (err) => handleFirestoreError(err, "list", "categories"),
@@ -1181,7 +1187,7 @@ export default function App() {
     } else {
       setCategories([]);
     }
-  }, [user, isSeeding, userRole]);
+  }, [user, isSeeding, userRole, tenantId]); // Fix: added tenantId — was missing causing seeding to not run when tenantId loads
 
   const syncToSheets = async (data: any[]) => {
     if (userRole !== "admin") return;
@@ -2067,6 +2073,7 @@ export default function App() {
       setTimeout(() => {
         setShowAddModal(false);
         setFormStatus({ type: null, message: null });
+        // Fix: reset ALL fields including split-related ones to prevent stale data on next open
         setNewTx({
           amount: "",
           type: "expense",
@@ -2078,11 +2085,15 @@ export default function App() {
           custodyAmountPercentage: "100",
           custodyType: "custody_out",
           personName: "",
+          splitType: "individual",
+          splits: [] as TransactionSplit[],
           isCustodyLinked: true,
           newCategoryName: "",
           newAccountName: "",
+          newPersonName: "",
           isAddingNewCategory: false,
           isAddingNewAccount: false,
+          isAddingNewPerson: false,
         });
         setActiveTab("dashboard");
       }, 500);
@@ -2096,9 +2107,39 @@ export default function App() {
     }
   };
 
+  // Shared delete handler — eliminates DRY violation between mobile & desktop views
+  const handleDeleteTransaction = async (tx: Transaction) => {
+    setConfirmDialog({
+      isOpen: true,
+      message: "هل أنت متأكد من حذف هذه العملية؟",
+      onConfirm: async () => {
+        try {
+          if (tx.custodyAccountId) {
+            const accountRef = doc(db, "custody_accounts", tx.custodyAccountId);
+            const balanceChange =
+              tx.type === "income" || tx.type === "custody_in"
+                ? -(tx.custodyAmount || 0)
+                : tx.custodyAmount || 0;
+            await updateDoc(accountRef, { balance: increment(balanceChange) });
+          }
+          const { id: _id, ...dataWithoutId } = tx;
+          pushToHistory({
+            type: "DELETE",
+            collection: "transactions",
+            id: tx.id!,
+            data: dataWithoutId,
+          });
+          await deleteDoc(doc(db, "transactions", tx.id!));
+        } catch (err) {
+          handleFirestoreError(err, "delete", "transactions");
+        }
+      },
+    });
+  };
 
 
   const availableMonths = useMemo(() => {
+
     const months = new Set<string>();
     transactions.forEach((tx) => {
       const date = tx.date.toDate();
@@ -2957,55 +2998,7 @@ export default function App() {
                                     <Edit2 className="w-4 h-4" />
                                   </button>
                                   <button
-                                    onClick={() => {
-                                      setConfirmDialog({
-                                        isOpen: true,
-                                        message:
-                                          "هل أنت متأكد من حذف هذه العملية؟",
-                                        onConfirm: async () => {
-                                          try {
-                                            if (tx.custodyAccountId) {
-                                              const accountRef = doc(
-                                                db,
-                                                "custody_accounts",
-                                                tx.custodyAccountId,
-                                              );
-                                              const balanceChange =
-                                                tx.type === "income" ||
-                                                tx.type === "custody_in"
-                                                  ? -tx.amount
-                                                  : tx.amount;
-                                              await updateDoc(accountRef, {
-                                                balance:
-                                                  increment(balanceChange),
-                                              });
-                                            }
-
-                                            // Push to history before deleting
-                                            const {
-                                              id: _id,
-                                              ...dataWithoutId
-                                            } = tx;
-                                            pushToHistory({
-                                              type: "DELETE",
-                                              collection: "transactions",
-                                              id: tx.id!,
-                                              data: dataWithoutId,
-                                            });
-
-                                            await deleteDoc(
-                                              doc(db, "transactions", tx.id!),
-                                            );
-                                          } catch (err) {
-                                            handleFirestoreError(
-                                              err,
-                                              "delete",
-                                              "transactions",
-                                            );
-                                          }
-                                        },
-                                      });
-                                    }}
+                                    onClick={() => handleDeleteTransaction(tx)}
                                     className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-all"
                                     title="حذف العملية"
                                   >
