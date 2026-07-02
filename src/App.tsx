@@ -745,6 +745,14 @@ export default function App() {
     });
   };
 
+  const clearTransactionHistory = () => {
+    setHistoryState({ history: [], pointer: -1 });
+    if (tenantId) {
+      localStorage.removeItem(`txHistory_${tenantId}`);
+      localStorage.removeItem(`txHistoryPointer_${tenantId}`);
+    }
+  };
+
   const showToast = (
     message: string,
     type: "success" | "info" | "error" = "success",
@@ -2138,6 +2146,84 @@ export default function App() {
     });
   };
 
+  const handleResetAllTransactions = async () => {
+    if (userRole !== "admin" || !tenantId) {
+      showToast("عذراً، تصفير العمليات متاح للمشرفين فقط", "error");
+      return;
+    }
+
+    if (transactions.length === 0) {
+      clearTransactionHistory();
+      showToast("سجل العمليات فارغ بالفعل", "info");
+      return;
+    }
+
+    setConfirmDialog({
+      isOpen: true,
+      message: `سيتم حذف جميع العمليات (${transactions.length}) نهائياً وتصفير سجل التراجع المحلي. هل تريد المتابعة؟`,
+      onConfirm: async () => {
+        setFormStatus({ type: "loading", message: "جاري تصفير العمليات..." });
+
+        try {
+          const custodyBalanceChanges = new Map<string, number>();
+          const txSnapshot = await getDocs(
+            query(collection(db, "transactions"), where("userId", "==", tenantId)),
+          );
+
+          txSnapshot.docs.forEach((txDoc) => {
+            const tx = txDoc.data() as Transaction;
+            if (!tx.custodyAccountId || !tx.isCustodyLinked) return;
+
+            const custodyAmount = Number(tx.custodyAmount ?? tx.amount ?? 0);
+            if (!custodyAmount) return;
+
+            const balanceChange =
+              tx.type === "income" || tx.type === "custody_in"
+                ? -custodyAmount
+                : custodyAmount;
+
+            custodyBalanceChanges.set(
+              tx.custodyAccountId,
+              (custodyBalanceChanges.get(tx.custodyAccountId) || 0) + balanceChange,
+            );
+          });
+
+          for (let i = 0; i < txSnapshot.docs.length; i += 450) {
+            const batch = writeBatch(db);
+            txSnapshot.docs.slice(i, i + 450).forEach((txDoc) => {
+              batch.delete(txDoc.ref);
+            });
+            await batch.commit();
+          }
+
+          const custodyEntries = Array.from(custodyBalanceChanges.entries()).filter(
+            ([, amount]) => amount !== 0,
+          );
+
+          for (let i = 0; i < custodyEntries.length; i += 450) {
+            const batch = writeBatch(db);
+            custodyEntries.slice(i, i + 450).forEach(([accountId, amount]) => {
+              batch.update(doc(db, "custody_accounts", accountId), {
+                balance: increment(amount),
+              });
+            });
+            await batch.commit();
+          }
+
+          clearTransactionHistory();
+          setSelectedTransactions([]);
+          showToast("تم تصفير جميع العمليات بنجاح", "success");
+        } catch (error) {
+          console.error("Reset transactions error", error);
+          handleFirestoreError(error, "delete", "transactions");
+          showToast("حدث خطأ أثناء تصفير العمليات", "error");
+        } finally {
+          setFormStatus({ type: null, message: null });
+        }
+      },
+    });
+  };
+
 
   const availableMonths = useMemo(() => {
 
@@ -2686,6 +2772,17 @@ export default function App() {
                       />
                       استرجاع من الجدول
                     </button>
+                    {userRole === "admin" && (
+                      <button
+                        onClick={handleResetAllTransactions}
+                        disabled={formStatus.type === "loading"}
+                        className="flex-1 sm:flex-none bg-rose-50 text-rose-600 px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-rose-100 transition-colors disabled:opacity-50"
+                        title="حذف جميع العمليات والبدء من جديد"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        تصفير العمليات
+                      </button>
+                    )}
                   </div>
                 </div>
 
