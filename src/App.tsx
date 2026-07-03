@@ -2052,8 +2052,11 @@ export default function App() {
           const batch = writeBatch(db);
           if (tx.custodyAccountId) {
             const accountRef = doc(db, "custody_accounts", tx.custodyAccountId);
-            const balanceChange = getCustodyBalanceChange(tx, "reverse");
-            batch.update(accountRef, { balance: increment(balanceChange) });
+            const accountSnap = await getDoc(accountRef);
+            if (accountSnap.exists()) {
+              const balanceChange = getCustodyBalanceChange(tx, "reverse");
+              batch.update(accountRef, { balance: increment(balanceChange) });
+            }
           }
           const { id: _id, ...dataWithoutId } = tx;
           batch.delete(doc(db, "transactions", tx.id!));
