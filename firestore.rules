@@ -13,6 +13,14 @@ service cloud.firestore {
       return exists(p) ? get(p) : null;
     }
 
+    function isRegistered() {
+      return isAuth() && getUserDoc() != null;
+    }
+
+    function tenantId() {
+      return getUserDoc().data.tenantId;
+    }
+
     // ─── Helper: User is admin (either by email or by role field) ─────
     function isAdmin() {
       // System-level super admins by email
@@ -24,50 +32,74 @@ service cloud.firestore {
       );
     }
 
+    function canReadTenantDoc() {
+      return isRegistered() && resource.data.userId == tenantId();
+    }
+
+    function canCreateTenantDoc() {
+      return isAdmin() && isRegistered() && request.resource.data.userId == tenantId();
+    }
+
+    function canWriteTenantDoc() {
+      return isAdmin() && isRegistered() && resource.data.userId == tenantId();
+    }
+
+    function canReadTenantScopedDoc() {
+      return isRegistered() && resource.data.tenantId == tenantId();
+    }
+
+    function canCreateTenantScopedDoc() {
+      return isAdmin() && isRegistered() && request.resource.data.tenantId == tenantId();
+    }
+
+    function canWriteTenantScopedDoc() {
+      return isAdmin() && isRegistered() && resource.data.tenantId == tenantId();
+    }
+
     // ─── transactions ─────────────────────────────────────────────────
     match /transactions/{id} {
-      allow read:   if isAuth();
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow read:   if canReadTenantDoc();
+      allow create: if canCreateTenantDoc();
+      allow update: if canWriteTenantDoc() && request.resource.data.userId == resource.data.userId;
+      allow delete: if canWriteTenantDoc();
     }
 
     // ─── custody_accounts ─────────────────────────────────────────────
     match /custody_accounts/{id} {
-      allow read:   if isAuth();
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow read:   if canReadTenantDoc();
+      allow create: if canCreateTenantDoc();
+      allow update: if canWriteTenantDoc() && request.resource.data.userId == resource.data.userId;
+      allow delete: if canWriteTenantDoc();
     }
 
     // ─── categories ───────────────────────────────────────────────────
     match /categories/{id} {
-      allow read:   if isAuth();
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow read:   if canReadTenantDoc();
+      allow create: if canCreateTenantDoc();
+      allow update: if canWriteTenantDoc() && request.resource.data.userId == resource.data.userId;
+      allow delete: if canWriteTenantDoc();
     }
 
     // ─── persons ──────────────────────────────────────────────────────
     match /persons/{id} {
-      allow read:   if isAuth();
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow read:   if canReadTenantDoc();
+      allow create: if canCreateTenantDoc();
+      allow update: if canWriteTenantDoc() && request.resource.data.userId == resource.data.userId;
+      allow delete: if canWriteTenantDoc();
     }
 
     // ─── settings ─────────────────────────────────────────────────────
     match /settings/{id} {
-      allow read:   if isAuth();
-      allow write:  if isAdmin();
+      allow read:   if isRegistered() && id == tenantId();
+      allow write:  if isAdmin() && isRegistered() && id == tenantId();
     }
 
     // ─── reminders ────────────────────────────────────────────────────
     match /reminders/{id} {
-      allow read:   if isAuth();
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow read:   if canReadTenantScopedDoc();
+      allow create: if canCreateTenantScopedDoc();
+      allow update: if canWriteTenantScopedDoc() && request.resource.data.tenantId == resource.data.tenantId;
+      allow delete: if canWriteTenantScopedDoc();
     }
 
     // ─── users ────────────────────────────────────────────────────────
@@ -75,22 +107,24 @@ service cloud.firestore {
       // Any signed-in user can read their own doc; admins can read all
       allow get:    if isAuth() && (userId == request.auth.uid || isAdmin());
       allow list:   if isAdmin();
-      // Anyone can create their own user doc on first sign-in
-      allow create: if isAuth() && (userId == request.auth.uid || isAdmin());
-      allow update: if isAuth() && (userId == request.auth.uid || isAdmin());
+      allow create: if isAdmin() && isRegistered() && request.resource.data.tenantId == tenantId();
+      allow update: if isAdmin()
+        && isRegistered()
+        && resource.data.tenantId == tenantId()
+        && request.resource.data.tenantId == resource.data.tenantId;
       allow delete: if isAdmin() && userId != request.auth.uid;
     }
 
     // ─── comments ─────────────────────────────────────────────────────
     match /comments/{id} {
-      allow read:   if isAuth();
-      allow write:  if isAdmin();
+      allow read:   if isRegistered();
+      allow write:  if isAdmin() && isRegistered();
     }
 
     // ─── advertisements ───────────────────────────────────────────────
     match /advertisements/{id} {
-      allow read:   if isAuth();
-      allow write:  if isAdmin();
+      allow read:   if isRegistered();
+      allow write:  if isAdmin() && isRegistered();
     }
   }
 }

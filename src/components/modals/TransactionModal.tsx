@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ChevronLeft, 
@@ -70,6 +70,18 @@ export const TransactionModal = ({
   onOpenAddPerson
 }: TransactionModalProps) => {
   const isAdd = mode === 'add';
+
+  useEffect(() => {
+    if (!isOpen || !isAdd || !transaction.isCustodyLinked || transaction.custodyAccountId || custodyAccounts.length === 0) {
+      return;
+    }
+
+    setTransaction({
+      ...transaction,
+      custodyAccountId: custodyAccounts[0].id,
+      custodyAmountPercentage: transaction.custodyAmountPercentage || '100',
+    });
+  }, [isOpen, isAdd, transaction.isCustodyLinked, transaction.custodyAccountId, custodyAccounts, setTransaction]);
 
   const handleSplitChange = (index: number, field: string, value: any) => {
     const newSplits = [...(transaction.splits || [])];

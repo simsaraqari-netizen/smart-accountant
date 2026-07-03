@@ -56,8 +56,6 @@ import { auth, db } from "./firebase";
 import firebaseConfig from "../firebase-applet-config.json";
 import { initializeApp, getApps, getApp } from "firebase/app";
 import {
-  signInWithPopup,
-  GoogleAuthProvider,
   onAuthStateChanged,
   signOut,
   User,
@@ -396,6 +394,18 @@ export default function App() {
     isAddingNewAccount: false,
     isAddingNewPerson: false,
   });
+
+  useEffect(() => {
+    if (!showAddModal || !newTx.isCustodyLinked || newTx.custodyAccountId || custodyAccounts.length === 0) {
+      return;
+    }
+
+    setNewTx((prev) => ({
+      ...prev,
+      custodyAccountId: custodyAccounts[0].id,
+      custodyAmountPercentage: prev.custodyAmountPercentage || "100",
+    }));
+  }, [showAddModal, newTx.isCustodyLinked, newTx.custodyAccountId, custodyAccounts]);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [accountForm, setAccountForm] = useState({
     newPassword: "",
@@ -411,7 +421,7 @@ export default function App() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
 
-  const { reminders } = useReminders(tenantId);
+  const { reminders } = useReminders(userRole === "admin" ? tenantId : null);
 
   // Handle back button / gesture
   useEffect(() => {
@@ -514,38 +524,11 @@ export default function App() {
             setUserRole(data.role);
             setTenantId(currentTenantId);
           } else {
-            // If user document doesn't exist, create it as 'admin' of their own tenant
-            const role = u.email === "user@internal.app" ? "user" : "admin";
-            let newTenantId = u.uid;
-
-            if (
-              u.email === "admin@internal.app" ||
-              u.email === "user@internal.app"
-            ) {
-              try {
-                const q = query(
-                  collection(db, "users"),
-                  where("email", "==", "simsaraqari@gmail.com"),
-                );
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty) {
-                  const mainUserDoc = querySnapshot.docs[0];
-                  newTenantId = mainUserDoc.data().tenantId || mainUserDoc.id;
-                }
-              } catch (err) {
-                console.error("Migration error (new):", err);
-              }
-            }
-
-            await setDoc(doc(db, "users", u.uid), {
-              email: u.email,
-              displayName: u.displayName || "",
-              role: role,
-              tenantId: newTenantId,
-              createdAt: Timestamp.now(),
-            });
-            setUserRole(role);
-            setTenantId(newTenantId);
+            await signOut(auth);
+            setUser(null);
+            setUserRole(null);
+            setTenantId(null);
+            setAuthError("هذا الحساب غير مضاف من قبل الادمن. يرجى التواصل مع مدير النظام.");
           }
         } catch (error) {
           console.error("Error in auth state change:", error);
@@ -753,6 +736,16 @@ export default function App() {
     }
   };
 
+  const getCustodyBalanceChange = (
+    tx: Partial<Transaction> & Record<string, any>,
+    mode: "apply" | "reverse",
+  ) => {
+    const custodyAmount = Number(tx.custodyAmount ?? tx.amount ?? 0) || 0;
+    const isPositive = tx.type === "income" || tx.type === "custody_in";
+    const appliedChange = isPositive ? custodyAmount : -custodyAmount;
+    return mode === "apply" ? appliedChange : -appliedChange;
+  };
+
   const showToast = (
     message: string,
     type: "success" | "info" | "error" = "success",
@@ -786,12 +779,7 @@ export default function App() {
                   "custody_accounts",
                   action.data.custodyAccountId,
                 );
-                const isPositive =
-                  action.data.type === "income" ||
-                  action.data.type === "custody_in";
-                const balanceChange = isPositive
-                  ? -action.data.amount
-                  : action.data.amount;
+                const balanceChange = getCustodyBalanceChange(action.data, "reverse");
                 await updateDoc(accountRef, {
                   balance: increment(balanceChange),
                 });
@@ -808,12 +796,7 @@ export default function App() {
                   "custody_accounts",
                   action.data.custodyAccountId,
                 );
-                const isPositive =
-                  action.data.type === "income" ||
-                  action.data.type === "custody_in";
-                const balanceChange = isPositive
-                  ? action.data.amount
-                  : -action.data.amount;
+                const balanceChange = getCustodyBalanceChange(action.data, "apply");
                 await updateDoc(accountRef, {
                   balance: increment(balanceChange),
                 });
@@ -831,12 +814,7 @@ export default function App() {
                   "custody_accounts",
                   action.data.custodyAccountId,
                 );
-                const newIsPositive =
-                  action.data.type === "income" ||
-                  action.data.type === "custody_in";
-                const newBalanceChange = newIsPositive
-                  ? -(action.data.custodyAmount || 0)
-                  : action.data.custodyAmount || 0;
+                const newBalanceChange = getCustodyBalanceChange(action.data, "reverse");
                 await updateDoc(newAccountRef, {
                   balance: increment(newBalanceChange),
                 });
@@ -852,12 +830,7 @@ export default function App() {
                   "custody_accounts",
                   action.oldData.custodyAccountId,
                 );
-                const oldIsPositive =
-                  action.oldData.type === "income" ||
-                  action.oldData.type === "custody_in";
-                const oldBalanceChange = oldIsPositive
-                  ? action.oldData.custodyAmount || 0
-                  : -(action.oldData.custodyAmount || 0);
+                const oldBalanceChange = getCustodyBalanceChange(action.oldData, "apply");
                 await updateDoc(oldAccountRef, {
                   balance: increment(oldBalanceChange),
                 });
@@ -902,12 +875,7 @@ export default function App() {
                   "custody_accounts",
                   action.data.custodyAccountId,
                 );
-                const isPositive =
-                  action.data.type === "income" ||
-                  action.data.type === "custody_in";
-                const balanceChange = isPositive
-                  ? action.data.amount
-                  : -action.data.amount;
+                const balanceChange = getCustodyBalanceChange(action.data, "apply");
                 await updateDoc(accountRef, {
                   balance: increment(balanceChange),
                 });
@@ -924,12 +892,7 @@ export default function App() {
                   "custody_accounts",
                   action.data.custodyAccountId,
                 );
-                const isPositive =
-                  action.data.type === "income" ||
-                  action.data.type === "custody_in";
-                const balanceChange = isPositive
-                  ? -action.data.amount
-                  : action.data.amount;
+                const balanceChange = getCustodyBalanceChange(action.data, "reverse");
                 await updateDoc(accountRef, {
                   balance: increment(balanceChange),
                 });
@@ -950,12 +913,7 @@ export default function App() {
                   "custody_accounts",
                   action.oldData.custodyAccountId,
                 );
-                const oldIsPositive =
-                  action.oldData.type === "income" ||
-                  action.oldData.type === "custody_in";
-                const oldBalanceChange = oldIsPositive
-                  ? -(action.oldData.custodyAmount || 0)
-                  : action.oldData.custodyAmount || 0;
+                const oldBalanceChange = getCustodyBalanceChange(action.oldData, "reverse");
                 await updateDoc(oldAccountRef, {
                   balance: increment(oldBalanceChange),
                 });
@@ -968,12 +926,7 @@ export default function App() {
                   "custody_accounts",
                   action.data.custodyAccountId,
                 );
-                const newIsPositive =
-                  action.data.type === "income" ||
-                  action.data.type === "custody_in";
-                const newBalanceChange = newIsPositive
-                  ? action.data.custodyAmount || 0
-                  : -(action.data.custodyAmount || 0);
+                const newBalanceChange = getCustodyBalanceChange(action.data, "apply");
                 await updateDoc(newAccountRef, {
                   balance: increment(newBalanceChange),
                 });
@@ -1474,17 +1427,6 @@ export default function App() {
     };
   }, [user, userRole, tenantId]);
 
-  const handleLogin = async () => {
-    try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
-    } catch (error: any) {
-      console.error("Login Error:", error);
-      alert(
-        "حدث خطأ أثناء تسجيل الدخول بواسطة جوجل: " + (error.message || error),
-      );
-    }
-  };
-
   const formatAuthEmail = (input: string) => {
     const trimmed = input.trim().toLowerCase();
     if (trimmed.includes("@")) return trimmed;
@@ -1504,47 +1446,21 @@ export default function App() {
     const authEmail = formatAuthEmail(email);
 
     try {
-      // Try to sign in first
-      try {
-        await signInWithEmailAndPassword(auth, authEmail, password);
-      } catch (signInError: any) {
-        // If user not found, try to sign up automatically
-        if (
-          signInError.code === "auth/user-not-found" ||
-          signInError.code === "auth/invalid-credential"
-        ) {
-          try {
-            await createUserWithEmailAndPassword(auth, authEmail, password);
-          } catch (signUpError: any) {
-            // If signup fails because user already exists (race condition), throw original signin error
-            if (signUpError.code === "auth/email-already-in-use") {
-              throw signInError;
-            }
-            throw signUpError;
-          }
-        } else {
-          throw signInError;
-        }
-      }
+      await signInWithEmailAndPassword(auth, authEmail, password);
     } catch (error: any) {
       console.error("Auth Error:", error.code, error.message);
       let message = `خطأ (${error.code}): `;
 
       switch (error.code) {
+        case "auth/user-not-found":
+        case "auth/invalid-credential":
+          message += "بيانات الدخول غير صحيحة أو الحساب غير مضاف من الادمن";
+          break;
         case "auth/wrong-password":
           message += "كلمة المرور غير صحيحة لهذا المستخدم";
           break;
-        case "auth/email-already-in-use":
-          message += "هذا المستخدم مسجل بالفعل بكلمة مرور مختلفة";
-          break;
-        case "auth/weak-password":
-          message += "كلمة المرور ضعيفة جداً (يجب أن تكون 6 أحرف على الأقل)";
-          break;
         case "auth/operation-not-allowed":
           message += "تسجيل الدخول بالبريد معطل في إعدادات Firebase";
-          break;
-        case "auth/invalid-credential":
-          message += "بيانات الدخول غير صحيحة";
           break;
         default:
           message += "حدث خطأ غير متوقع، يرجى المحاولة لاحقاً";
@@ -1884,12 +1800,7 @@ export default function App() {
           "custody_accounts",
           editingTransaction.custodyAccountId,
         );
-        const oldIsPositive =
-          editingTransaction.type === "income" ||
-          editingTransaction.type === "custody_in";
-        const oldBalanceChange = oldIsPositive
-          ? -(editingTransaction.custodyAmount || 0)
-          : editingTransaction.custodyAmount || 0;
+        const oldBalanceChange = getCustodyBalanceChange(editingTransaction, "reverse");
         await updateDoc(oldAccountRef, {
           balance: increment(oldBalanceChange),
         });
@@ -2125,10 +2036,7 @@ export default function App() {
         try {
           if (tx.custodyAccountId) {
             const accountRef = doc(db, "custody_accounts", tx.custodyAccountId);
-            const balanceChange =
-              tx.type === "income" || tx.type === "custody_in"
-                ? -(tx.custodyAmount || 0)
-                : tx.custodyAmount || 0;
+            const balanceChange = getCustodyBalanceChange(tx, "reverse");
             await updateDoc(accountRef, { balance: increment(balanceChange) });
           }
           const { id: _id, ...dataWithoutId } = tx;
@@ -2174,13 +2082,7 @@ export default function App() {
             const tx = txDoc.data() as Transaction;
             if (!tx.custodyAccountId || !tx.isCustodyLinked) return;
 
-            const custodyAmount = Number(tx.custodyAmount ?? tx.amount ?? 0);
-            if (!custodyAmount) return;
-
-            const balanceChange =
-              tx.type === "income" || tx.type === "custody_in"
-                ? -custodyAmount
-                : custodyAmount;
+            const balanceChange = getCustodyBalanceChange(tx, "reverse");
 
             custodyBalanceChanges.set(
               tx.custodyAccountId,
@@ -2331,26 +2233,6 @@ export default function App() {
             نظام محاسبي متطور لإدارة أموالك بكل سهولة.
           </p>
 
-          <button
-            onClick={handleLogin}
-            className="w-full bg-white border-2 border-emerald-100 text-gray-700 py-3 rounded-lg font-black text-sm flex items-center justify-center gap-3 hover:bg-emerald-50 transition-all active:scale-[0.95] shadow-sm mb-4"
-          >
-            <img
-              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-              className="w-6 h-6"
-              alt="Google"
-            />
-            الدخول السريع بواسطة جوجل
-          </button>
-
-          <div className="flex items-center gap-4 my-6">
-            <div className="flex-1 h-px bg-gray-200"></div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase px-2">
-              أو الدخول اليدوي
-            </span>
-            <div className="flex-1 h-px bg-gray-200"></div>
-          </div>
-
           <form onSubmit={handleEmailAuth} className="space-y-4 text-right">
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1">
@@ -2495,18 +2377,20 @@ export default function App() {
                   </button>
                 </div>
               )}
-              <button
-                onClick={generatePDFReport}
-                disabled={isGeneratingPDF}
-                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm disabled:opacity-50"
-              >
-                {isGeneratingPDF ? (
-                  <div className="w-4 h-4 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin"></div>
-                ) : (
-                  <Printer className="w-4 h-4 text-emerald-600" />
-                )}
-                طباعة / PDF
-              </button>
+              {userRole === "admin" && (
+                <button
+                  onClick={generatePDFReport}
+                  disabled={isGeneratingPDF}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm disabled:opacity-50"
+                >
+                  {isGeneratingPDF ? (
+                    <div className="w-4 h-4 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin"></div>
+                  ) : (
+                    <Printer className="w-4 h-4 text-emerald-600" />
+                  )}
+                  طباعة / PDF
+                </button>
+              )}
             </div>
           </div>
 
@@ -2733,55 +2617,57 @@ export default function App() {
                     </div>
                   </div>
                   <div className="flex gap-2 w-full sm:w-auto flex-1 sm:flex-none sm:justify-end">
-                    <button
-                      onClick={() => {
-                        import("./utils/exportUtils")
-                          .then((module) => {
-                            module.exportTransactionsToExcel(
-                              filteredTransactionsList,
-                            );
-                            showToast("تم تصدير العمليات بنجاح", "success");
-                          })
-                          .catch((err) => {
-                            console.error("Failed to load export util", err);
-                            showToast("حدث خطأ أثناء التصدير", "error");
-                          });
-                      }}
-                      className="flex-1 sm:flex-none bg-emerald-600 text-white px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors shadow-sm"
-                    >
-                      <Download className="w-4 h-4" />
-                      تصدير Excel
-                    </button>
-                    <button
-                      onClick={handleManualSyncToSheets}
-                      disabled={isSyncing}
-                      className="flex-1 sm:flex-none bg-emerald-50 text-emerald-600 px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-emerald-100 transition-colors disabled:opacity-50"
-                      title="إرسال البيانات إلى جدول جوجل (Google Sheets)"
-                    >
-                      <ArrowUpRight className="w-4 h-4" />
-                      إرسال للجدول
-                    </button>
-                    <button
-                      onClick={syncFromSheets}
-                      disabled={isSyncing}
-                      className="flex-1 sm:flex-none bg-blue-50 text-blue-600 px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors disabled:opacity-50"
-                      title="استرجاع البيانات من جدول جوجل (Google Sheets)"
-                    >
-                      <ArrowDownLeft
-                        className={`w-4 h-4 ${isSyncing ? "animate-bounce" : ""}`}
-                      />
-                      استرجاع من الجدول
-                    </button>
                     {userRole === "admin" && (
-                      <button
-                        onClick={handleResetAllTransactions}
-                        disabled={formStatus.type === "loading"}
-                        className="flex-1 sm:flex-none bg-rose-50 text-rose-600 px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-rose-100 transition-colors disabled:opacity-50"
-                        title="حذف جميع العمليات والبدء من جديد"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        تصفير العمليات
-                      </button>
+                      <>
+                        <button
+                          onClick={() => {
+                            import("./utils/exportUtils")
+                              .then((module) => {
+                                module.exportTransactionsToExcel(
+                                  filteredTransactionsList,
+                                );
+                                showToast("تم تصدير العمليات بنجاح", "success");
+                              })
+                              .catch((err) => {
+                                console.error("Failed to load export util", err);
+                                showToast("حدث خطأ أثناء التصدير", "error");
+                              });
+                          }}
+                          className="flex-1 sm:flex-none bg-emerald-600 text-white px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors shadow-sm"
+                        >
+                          <Download className="w-4 h-4" />
+                          تصدير Excel
+                        </button>
+                        <button
+                          onClick={handleManualSyncToSheets}
+                          disabled={isSyncing}
+                          className="flex-1 sm:flex-none bg-emerald-50 text-emerald-600 px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-emerald-100 transition-colors disabled:opacity-50"
+                          title="إرسال البيانات إلى جدول جوجل (Google Sheets)"
+                        >
+                          <ArrowUpRight className="w-4 h-4" />
+                          إرسال للجدول
+                        </button>
+                        <button
+                          onClick={syncFromSheets}
+                          disabled={isSyncing}
+                          className="flex-1 sm:flex-none bg-blue-50 text-blue-600 px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors disabled:opacity-50"
+                          title="استرجاع البيانات من جدول جوجل (Google Sheets)"
+                        >
+                          <ArrowDownLeft
+                            className={`w-4 h-4 ${isSyncing ? "animate-bounce" : ""}`}
+                          />
+                          استرجاع من الجدول
+                        </button>
+                        <button
+                          onClick={handleResetAllTransactions}
+                          disabled={formStatus.type === "loading"}
+                          className="flex-1 sm:flex-none bg-rose-50 text-rose-600 px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-rose-100 transition-colors disabled:opacity-50"
+                          title="حذف جميع العمليات والبدء من جديد"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          تصفير العمليات
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -2808,7 +2694,7 @@ export default function App() {
                                 
                                 if (tx.custodyAccountId) {
                                   const accountRef = doc(db, "custody_accounts", tx.custodyAccountId);
-                                  const balanceChange = tx.type === "income" || tx.type === "custody_in" ? -tx.amount : tx.amount;
+                                  const balanceChange = getCustodyBalanceChange(tx, "reverse");
                                   batch.update(accountRef, { balance: increment(balanceChange) });
                                 }
                                 
@@ -2886,7 +2772,7 @@ export default function App() {
                                           try {
                                             if (tx.custodyAccountId) {
                                               const accountRef = doc(db, "custody_accounts", tx.custodyAccountId);
-                                              const balanceChange = tx.type === "income" || tx.type === "custody_in" ? -tx.amount : tx.amount;
+                                              const balanceChange = getCustodyBalanceChange(tx, "reverse");
                                               await updateDoc(accountRef, { balance: increment(balanceChange) });
                                             }
                                             const { id: _id, ...dataWithoutId } = tx;

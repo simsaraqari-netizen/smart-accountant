@@ -97,13 +97,15 @@ export const PersonsDashboard: React.FC<PersonsDashboardProps> = ({
             <p className="text-xs font-bold text-gray-500">متابعة حسابات الموظفين</p>
           </div>
         </div>
-        <button 
-          onClick={onOpenAddPerson}
-          className="bg-blue-600 text-white px-4 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
-        >
-          <UserPlus className="w-4 h-4" />
-          إضافة موظف
-        </button>
+        {userRole === 'admin' && (
+          <button 
+            onClick={onOpenAddPerson}
+            className="bg-blue-600 text-white px-4 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+          >
+            <UserPlus className="w-4 h-4" />
+            إضافة موظف
+          </button>
+        )}
       </div>
 
       <div className="relative">

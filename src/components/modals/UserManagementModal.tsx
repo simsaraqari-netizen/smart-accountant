@@ -45,6 +45,9 @@ export const UserManagementModal = ({
   handleDeleteUser,
   currentUser
 }: UserManagementModalProps) => {
+  const adminCount = allUsers.filter((u) => u.role === 'admin').length;
+  const readerCount = allUsers.filter((u) => u.role === 'user').length;
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -72,6 +75,23 @@ export const UserManagementModal = ({
             </div>
             
             <div className="flex-1 p-6 overflow-y-auto space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
+                  <p className="text-[10px] font-bold text-emerald-700 mb-1">المدراء</p>
+                  <p className="text-2xl font-black text-emerald-700">{adminCount}</p>
+                  <p className="text-[10px] font-bold text-emerald-700/70 mt-1">إضافة، تعديل، حذف، ومزامنة</p>
+                </div>
+                <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                  <p className="text-[10px] font-bold text-gray-600 mb-1">المستخدمون العاديون</p>
+                  <p className="text-2xl font-black text-gray-800">{readerCount}</p>
+                  <p className="text-[10px] font-bold text-gray-500 mt-1">قراءة التقارير والعمليات فقط</p>
+                </div>
+                <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
+                  <p className="text-[10px] font-bold text-blue-700 mb-2">قاعدة الدخول</p>
+                  <p className="text-xs font-black text-blue-800 leading-relaxed">لا يدخل النظام إلا المستخدمون المضافون من الادمن.</p>
+                </div>
+              </div>
+
               {/* Add New User Form */}
               <form onSubmit={handleCreateUser} className="bg-gray-50 p-6 rounded-2xl border border-gray-100 space-y-4">
                 <div className="flex items-center gap-2 mb-2">
