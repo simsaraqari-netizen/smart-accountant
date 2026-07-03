@@ -2049,19 +2049,23 @@ export default function App() {
       message: "هل أنت متأكد من حذف هذه العملية؟",
       onConfirm: async () => {
         try {
+          const batch = writeBatch(db);
           if (tx.custodyAccountId) {
             const accountRef = doc(db, "custody_accounts", tx.custodyAccountId);
             const balanceChange = getCustodyBalanceChange(tx, "reverse");
-            await updateDoc(accountRef, { balance: increment(balanceChange) });
+            batch.update(accountRef, { balance: increment(balanceChange) });
           }
           const { id: _id, ...dataWithoutId } = tx;
+          batch.delete(doc(db, "transactions", tx.id!));
+          await batch.commit();
+
           pushToHistory({
             type: "DELETE",
             collection: "transactions",
             id: tx.id!,
             data: dataWithoutId,
           });
-          await deleteDoc(doc(db, "transactions", tx.id!));
+          showToast("تم الحذف بنجاح", "success");
         } catch (err) {
           handleFirestoreError(err, "delete", "transactions");
         }
@@ -2779,26 +2783,7 @@ export default function App() {
                              {userRole === "admin" && (
                                <div className="flex items-center gap-1 z-10 relative">
                                   <button onClick={() => { setEditingTransaction(tx); setShowEditModal(true); }} className="p-1.5 text-gray-400 hover:text-blue-500 bg-gray-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
-                                  <button onClick={() => {
-                                      setConfirmDialog({
-                                        isOpen: true,
-                                        message: "هل أنت متأكد من حذف هذه العملية؟",
-                                        onConfirm: async () => {
-                                          try {
-                                            if (tx.custodyAccountId) {
-                                              const accountRef = doc(db, "custody_accounts", tx.custodyAccountId);
-                                              const balanceChange = getCustodyBalanceChange(tx, "reverse");
-                                              await updateDoc(accountRef, { balance: increment(balanceChange) });
-                                            }
-                                            const { id: _id, ...dataWithoutId } = tx;
-                                            pushToHistory({ type: "DELETE", collection: "transactions", id: tx.id!, data: dataWithoutId });
-                                            await deleteDoc(doc(db, "transactions", tx.id!));
-                                          } catch (err) {
-                                            handleFirestoreError(err, "delete", "transactions");
-                                          }
-                                        },
-                                      });
-                                  }} className="p-1.5 text-gray-400 hover:text-rose-500 bg-gray-50 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+                                  <button onClick={() => handleDeleteTransaction(tx)} className="p-1.5 text-gray-400 hover:text-rose-500 bg-gray-50 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
                                </div>
                              )}
                            </div>
