@@ -144,6 +144,10 @@ const PersonProfileModal = lazy(() =>
 );
 import { RemindersModal } from "./components/modals/RemindersModal";
 import { useReminders } from "./hooks/useReminders";
+import {
+  ConfirmDialog,
+  ConfirmDialogState,
+} from "./components/modals/ConfirmDialog";
 
 // --- Error Handling ---
 const handleFirestoreError = (
@@ -350,15 +354,10 @@ export default function App() {
     message: string;
     type: "success" | "info" | "error";
   } | null>(null);
-  const [confirmDialog, setConfirmDialog] = useState<{
-    isOpen: boolean;
-    message: string;
-    onConfirm: () => Promise<void> | void;
-    isLoading?: boolean;
-  }>({
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
     isOpen: false,
     message: "",
-    onConfirm: () => {},
+    onConfirm: async () => {},
   });
 
   const generatePDFReport = async () => {
@@ -770,6 +769,8 @@ export default function App() {
         setHistoryState((prev) => ({ ...prev, pointer: prev.pointer - 1 }));
 
         try {
+          const batch = writeBatch(db);
+
           if (action.type === "ADD") {
             if (action.collection === "transactions") {
               // Undo Add Transaction
@@ -780,13 +781,12 @@ export default function App() {
                   action.data.custodyAccountId,
                 );
                 const balanceChange = getCustodyBalanceChange(action.data, "reverse");
-                await updateDoc(accountRef, {
+                batch.update(accountRef, {
                   balance: increment(balanceChange),
                 });
               }
             }
-            await deleteDoc(doc(db, action.collection, action.id));
-            showToast("تم التراجع عن الإضافة", "info");
+            batch.delete(doc(db, action.collection, action.id));
           } else if (action.type === "DELETE") {
             if (action.collection === "transactions") {
               // Undo Delete Transaction
@@ -797,13 +797,12 @@ export default function App() {
                   action.data.custodyAccountId,
                 );
                 const balanceChange = getCustodyBalanceChange(action.data, "apply");
-                await updateDoc(accountRef, {
+                batch.update(accountRef, {
                   balance: increment(balanceChange),
                 });
               }
             }
-            await setDoc(doc(db, action.collection, action.id), action.data);
-            showToast("تم التراجع عن الحذف", "info");
+            batch.set(doc(db, action.collection, action.id), action.data);
           } else if (action.type === "UPDATE") {
             if (action.collection === "transactions") {
               // Undo Update Transaction
@@ -815,7 +814,7 @@ export default function App() {
                   action.data.custodyAccountId,
                 );
                 const newBalanceChange = getCustodyBalanceChange(action.data, "reverse");
-                await updateDoc(newAccountRef, {
+                batch.update(newAccountRef, {
                   balance: increment(newBalanceChange),
                 });
               }
@@ -831,17 +830,22 @@ export default function App() {
                   action.oldData.custodyAccountId,
                 );
                 const oldBalanceChange = getCustodyBalanceChange(action.oldData, "apply");
-                await updateDoc(oldAccountRef, {
+                batch.update(oldAccountRef, {
                   balance: increment(oldBalanceChange),
                 });
               }
             }
-            await updateDoc(
+            batch.update(
               doc(db, action.collection, action.id),
               action.oldData,
             );
-            showToast("تم التراجع عن التعديل", "info");
           }
+
+          await batch.commit();
+
+          if (action.type === "ADD") showToast("تم التراجع عن الإضافة", "info");
+          else if (action.type === "DELETE") showToast("تم التراجع عن الحذف", "info");
+          else if (action.type === "UPDATE") showToast("تم التراجع عن التعديل", "info");
         } catch (error) {
           console.error("Undo error:", error);
           showToast("فشل التراجع", "error");
@@ -866,6 +870,8 @@ export default function App() {
         setHistoryState((prev) => ({ ...prev, pointer: nextPointer }));
 
         try {
+          const batch = writeBatch(db);
+
           if (action.type === "ADD") {
             if (action.collection === "transactions") {
               // Redo Add Transaction
@@ -876,13 +882,12 @@ export default function App() {
                   action.data.custodyAccountId,
                 );
                 const balanceChange = getCustodyBalanceChange(action.data, "apply");
-                await updateDoc(accountRef, {
+                batch.update(accountRef, {
                   balance: increment(balanceChange),
                 });
               }
             }
-            await setDoc(doc(db, action.collection, action.id), action.data);
-            showToast("تمت اعادة الاضافة", "info");
+            batch.set(doc(db, action.collection, action.id), action.data);
           } else if (action.type === "DELETE") {
             if (action.collection === "transactions") {
               // Redo Delete Transaction
@@ -893,13 +898,12 @@ export default function App() {
                   action.data.custodyAccountId,
                 );
                 const balanceChange = getCustodyBalanceChange(action.data, "reverse");
-                await updateDoc(accountRef, {
+                batch.update(accountRef, {
                   balance: increment(balanceChange),
                 });
               }
             }
-            await deleteDoc(doc(db, action.collection, action.id));
-            showToast("تمت اعادة الحذف", "info");
+            batch.delete(doc(db, action.collection, action.id));
           } else if (action.type === "UPDATE") {
             if (action.collection === "transactions") {
               // Redo Update Transaction
@@ -914,7 +918,7 @@ export default function App() {
                   action.oldData.custodyAccountId,
                 );
                 const oldBalanceChange = getCustodyBalanceChange(action.oldData, "reverse");
-                await updateDoc(oldAccountRef, {
+                batch.update(oldAccountRef, {
                   balance: increment(oldBalanceChange),
                 });
               }
@@ -927,14 +931,19 @@ export default function App() {
                   action.data.custodyAccountId,
                 );
                 const newBalanceChange = getCustodyBalanceChange(action.data, "apply");
-                await updateDoc(newAccountRef, {
+                batch.update(newAccountRef, {
                   balance: increment(newBalanceChange),
                 });
               }
             }
-            await updateDoc(doc(db, action.collection, action.id), action.data);
-            showToast("تمت اعادة التعديل", "info");
+            batch.update(doc(db, action.collection, action.id), action.data);
           }
+
+          await batch.commit();
+
+          if (action.type === "ADD") showToast("تمت اعادة الاضافة", "info");
+          else if (action.type === "DELETE") showToast("تمت اعادة الحذف", "info");
+          else if (action.type === "UPDATE") showToast("تمت اعادة التعديل", "info");
         } catch (error) {
           console.error("Redo error:", error);
           showToast("فشلت الاعادة", "error");
@@ -1789,6 +1798,8 @@ export default function App() {
         updatedData.custodyAccountId = null;
       }
 
+      const batch = writeBatch(db);
+
       // 4. Update Custody Balances
       // Reverse old transaction impact
       if (
@@ -1801,7 +1812,7 @@ export default function App() {
           editingTransaction.custodyAccountId,
         );
         const oldBalanceChange = getCustodyBalanceChange(editingTransaction, "reverse");
-        await updateDoc(oldAccountRef, {
+        batch.update(oldAccountRef, {
           balance: increment(oldBalanceChange),
         });
       }
@@ -1818,16 +1829,18 @@ export default function App() {
         const newBalanceChange = newIsPositive
           ? newCustodyAmount
           : -newCustodyAmount;
-        await updateDoc(newAccountRef, {
+        batch.update(newAccountRef, {
           balance: increment(newBalanceChange),
         });
       }
 
       // 5. Update the transaction
-      await updateDoc(
+      batch.update(
         doc(db, "transactions", editingTransaction.id),
         updatedData,
       );
+
+      await batch.commit();
 
       // Push to history
       const { id: _id, ...oldDataWithoutId } = editingTransaction;
@@ -1975,17 +1988,19 @@ export default function App() {
       if (finalCustodyAccountId) transactionData.custodyAccountId = finalCustodyAccountId;
 
       // Save transaction + update custody balance IN PARALLEL
-      const [txRef] = await Promise.all([
-        addDoc(collection(db, "transactions"), transactionData),
-        // Update custody balance at the same time
-        finalCustodyAccountId && custodyAmount !== 0
-          ? updateDoc(doc(db, "custody_accounts", finalCustodyAccountId), {
-              balance: increment(
-                newTx.type === "income" || newTx.type === "custody_in" ? custodyAmount : -custodyAmount
-              ),
-            })
-          : Promise.resolve(null),
-      ]);
+      const batch = writeBatch(db);
+      const txRef = doc(collection(db, "transactions"));
+      batch.set(txRef, transactionData);
+
+      if (finalCustodyAccountId && custodyAmount !== 0) {
+        batch.update(doc(db, "custody_accounts", finalCustodyAccountId), {
+          balance: increment(
+            newTx.type === "income" || newTx.type === "custody_in" ? custodyAmount : -custodyAmount
+          ),
+        });
+      }
+
+      await batch.commit();
 
       pushToHistory({ type: "ADD", collection: "transactions", id: txRef.id, data: transactionData });
 
