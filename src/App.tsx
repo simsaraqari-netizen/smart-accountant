@@ -334,6 +334,11 @@ export default function App() {
   
   // Override role for specific email (temporary fix for admin access)
   const effectiveUserRole = user?.email === "simsaraqari@gmail.com" ? "admin" : userRole;
+  
+  // Debug logging
+  console.log('User email:', user?.email);
+  console.log('User role from DB:', userRole);
+  console.log('Effective user role:', effectiveUserRole);
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [showUserManagementModal, setShowUserManagementModal] = useState(false);
