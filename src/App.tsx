@@ -2783,12 +2783,10 @@ export default function App() {
                                  {format(tx.date.toDate(), "d/M/yyyy HH:mm")}
                                </span>
                              </div>
-                             {userRole === "admin" && (
-                               <div className="flex items-center gap-1 z-10 relative">
-                                  <button onClick={() => { setEditingTransaction(tx); setShowEditModal(true); }} className="p-1.5 text-gray-400 hover:text-blue-500 bg-gray-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
-                                  <button onClick={() => handleDeleteTransaction(tx)} className="p-1.5 text-gray-400 hover:text-rose-500 bg-gray-50 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
-                               </div>
-                             )}
+                             <div className="flex items-center gap-1 z-10 relative">
+                                <button onClick={() => { setEditingTransaction(tx); setShowEditModal(true); }} className="p-1.5 text-gray-400 hover:text-blue-500 bg-gray-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
+                                <button onClick={() => handleDeleteTransaction(tx)} className="p-1.5 text-gray-400 hover:text-rose-500 bg-gray-50 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+                             </div>
                            </div>
                            
                            <div className="flex justify-between items-center pr-2">
