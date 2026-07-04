@@ -1640,8 +1640,7 @@ export default function App() {
       !user ||
       !editingTransaction ||
       !editTx.amount ||
-      (!editTx.category && !editTx.newCategoryName) ||
-      userRole !== "admin"
+      (!editTx.category && !editTx.newCategoryName)
     ) {
       setFormStatus({
         type: "error",
@@ -1874,8 +1873,7 @@ export default function App() {
     if (
       !user ||
       !newTx.amount ||
-      (!newTx.category && !newTx.newCategoryName) ||
-      userRole !== "admin"
+      (!newTx.category && !newTx.newCategoryName)
     ) {
       setFormStatus({
         type: "error",
@@ -2970,27 +2968,25 @@ export default function App() {
                               {tx.description || "-"}
                             </td>
                             <td className="px-4 py-2">
-                              {userRole === "admin" && (
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={() => {
-                                      setEditingTransaction(tx);
-                                      setShowEditModal(true);
-                                    }}
-                                    className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-400 hover:text-blue-600 transition-all"
-                                    title="تعديل"
-                                  >
-                                    <Edit2 className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteTransaction(tx)}
-                                    className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-all"
-                                    title="حذف العملية"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              )}
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => {
+                                    setEditingTransaction(tx);
+                                    setShowEditModal(true);
+                                  }}
+                                  className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-400 hover:text-blue-600 transition-all"
+                                  title="تعديل"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteTransaction(tx)}
+                                  className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-all"
+                                  title="حذف العملية"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );
