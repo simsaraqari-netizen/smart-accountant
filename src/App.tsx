@@ -66,6 +66,8 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
   getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import {
@@ -1454,6 +1456,20 @@ export default function App() {
     // Encode any special/Arabic characters so Firebase Auth accepts it as a valid email string
     const encoded = encodeURIComponent(trimmed).replace(/%/g, "_");
     return `${encoded}@internal.app`;
+  };
+
+  const handleGoogleAuth = async () => {
+    setAuthError(null);
+    setAuthLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (error: any) {
+      console.error("Google Auth Error:", error.code, error.message);
+      setAuthError(`خطأ (${error.code}): ${error.message}`);
+    } finally {
+      setAuthLoading(false);
+    }
   };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
