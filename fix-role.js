@@ -1,35 +1,26 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
+import admin from 'firebase-admin';
+import serviceAccount from './serviceAccountKey.json' assert { type: 'json' };
 
-const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY,
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.VITE_FIREBASE_APP_ID
-};
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db = admin.firestore();
 
 async function fixUserRole() {
   const email = process.argv[2] || 'simsaraqari@gmail.com';
   
   try {
     // Find user by email
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('email', '==', email));
-    const querySnapshot = await getDocs(q);
+    const usersRef = db.collection('users');
+    const snapshot = await usersRef.where('email', '==', email).get();
     
-    if (querySnapshot.empty) {
+    if (snapshot.empty) {
       console.log('❌ User not found with email:', email);
       return;
     }
     
-    const userDoc = querySnapshot.docs[0];
+    const userDoc = snapshot.docs[0];
     const userId = userDoc.id;
     const userData = userDoc.data();
     
@@ -46,7 +37,7 @@ async function fixUserRole() {
     }
     
     // Update role to admin
-    await updateDoc(doc(db, 'users', userId), { role: 'admin' });
+    await usersRef.doc(userId).update({ role: 'admin' });
     console.log('✅ Successfully updated user role to admin');
     
   } catch (error) {
