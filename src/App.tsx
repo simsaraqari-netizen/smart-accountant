@@ -331,6 +331,9 @@ export default function App() {
   const [newCustodyBalance, setNewCustodyBalance] = useState<string>("0");
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [userRole, setUserRole] = useState<"admin" | "user" | null>(null);
+  
+  // Override role for specific email (temporary fix for admin access)
+  const effectiveUserRole = user?.email === "simsaraqari@gmail.com" ? "admin" : userRole;
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [showUserManagementModal, setShowUserManagementModal] = useState(false);
@@ -420,7 +423,7 @@ export default function App() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
 
-  const { reminders } = useReminders(userRole === "admin" ? tenantId : null);
+  const { reminders } = useReminders(effectiveUserRole === "admin" ? tenantId : null);
 
   // Handle back button / gesture
   useEffect(() => {
@@ -594,7 +597,7 @@ export default function App() {
           setVapidKey(data.vapidKey || "");
 
           // Auto-set if empty and user is admin
-          if (!url && userRole === "admin") {
+          if (!url && effectiveUserRole === "admin") {
             setDoc(
               doc(db, "settings", tenantId),
               {
@@ -604,7 +607,7 @@ export default function App() {
               { merge: true },
             );
           }
-        } else if (userRole === "admin") {
+        } else if (effectiveUserRole === "admin") {
           // Create settings doc if it doesn't exist
           setDoc(
             doc(db, "settings", tenantId),
@@ -759,7 +762,7 @@ export default function App() {
   useEffect(() => () => clearTimeout(toastTimerRef.current), []);
 
   const handleUndo = async () => {
-    if (historyState.pointer < 0 || userRole !== "admin") return;
+    if (historyState.pointer < 0 || effectiveUserRole !== "admin") return;
 
     setConfirmDialog({
       isOpen: true,
@@ -857,7 +860,7 @@ export default function App() {
   const handleRedo = async () => {
     if (
       historyState.pointer >= historyState.history.length - 1 ||
-      userRole !== "admin"
+      effectiveUserRole !== "admin"
     )
       return;
 
@@ -953,7 +956,7 @@ export default function App() {
   };
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (userRole !== "admin") return;
+    if (effectiveUserRole !== "admin") return;
 
     if (newUserForm.password.length < 6) {
       setFormStatus({
@@ -1020,7 +1023,7 @@ export default function App() {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (userRole !== "admin" || userId === user?.uid) return;
+    if (effectiveUserRole !== "admin" || userId === user?.uid) return;
 
     setConfirmDialog({
       isOpen: true,
@@ -1051,7 +1054,7 @@ export default function App() {
     userId: string,
     newRole: "admin" | "user",
   ) => {
-    if (userRole !== "admin" || userId === user?.uid) return;
+    if (effectiveUserRole !== "admin" || userId === user?.uid) return;
     try {
       const userToUpdate = allUsers.find((u) => u.id === userId);
       if (userToUpdate) {
@@ -1074,7 +1077,7 @@ export default function App() {
 
   const handleEditUserSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (userRole !== "admin" || !editingUser) return;
+    if (effectiveUserRole !== "admin" || !editingUser) return;
 
     setFormStatus({
       type: "loading",
@@ -1125,7 +1128,7 @@ export default function App() {
           }));
           // Fix: always update categories state, seed only if needed
           setCategories(cats);
-          if (cats.length === 0 && !isSeeding && userRole === "admin") {
+          if (cats.length === 0 && !isSeeding && effectiveUserRole === "admin") {
             setIsSeeding(true);
             const initialCats = [
               { name: "راتب", type: "income", userId: tenantId },
@@ -1158,10 +1161,10 @@ export default function App() {
     } else {
       setCategories([]);
     }
-  }, [user, isSeeding, userRole, tenantId]); // Fix: added tenantId — was missing causing seeding to not run when tenantId loads
+  }, [user, isSeeding, effectiveUserRole, tenantId]); // Fix: added tenantId — was missing causing seeding to not run when tenantId loads
 
   const syncToSheets = async (data: any[]) => {
-    if (userRole !== "admin") return;
+    if (effectiveUserRole !== "admin") return;
     if (!sheetUrl || isSyncing) return;
     try {
       setIsSyncing(true);
@@ -1204,7 +1207,7 @@ export default function App() {
   };
 
   const handleManualSyncToSheets = async () => {
-    if (userRole !== "admin") {
+    if (effectiveUserRole !== "admin") {
       alert("عذراً، هذه الميزة متاحة للمشرفين فقط.");
       return;
     }
@@ -1221,7 +1224,7 @@ export default function App() {
   };
 
   const syncFromSheets = async () => {
-    if (userRole !== "admin") {
+    if (effectiveUserRole !== "admin") {
       alert("عذراً، هذه الميزة متاحة للمشرفين فقط.");
       return;
     }
@@ -1408,7 +1411,7 @@ export default function App() {
     );
 
     let unsubscribeUsers = () => {};
-    if (userRole === "admin") {
+    if (effectiveUserRole === "admin") {
       const usersQuery = query(
         collection(db, "users"),
         where("tenantId", "==", tenantId),
@@ -1640,7 +1643,8 @@ export default function App() {
       !user ||
       !editingTransaction ||
       !editTx.amount ||
-      (!editTx.category && !editTx.newCategoryName)
+      (!editTx.category && !editTx.newCategoryName) ||
+      effectiveUserRole !== "admin"
     ) {
       setFormStatus({
         type: "error",
@@ -1873,7 +1877,8 @@ export default function App() {
     if (
       !user ||
       !newTx.amount ||
-      (!newTx.category && !newTx.newCategoryName)
+      (!newTx.category && !newTx.newCategoryName) ||
+      effectiveUserRole !== "admin"
     ) {
       setFormStatus({
         type: "error",
@@ -2075,7 +2080,7 @@ export default function App() {
   };
 
   const handleResetAllTransactions = async () => {
-    if (userRole !== "admin" || !tenantId) {
+    if (effectiveUserRole !== "admin" || !tenantId) {
       showToast("عذراً، تصفير العمليات متاح للمشرفين فقط", "error");
       return;
     }
@@ -2341,7 +2346,7 @@ export default function App() {
       <div className="min-h-screen bg-[#F8FAFC]" dir="rtl">
         <Navbar
           user={user}
-          userRole={userRole}
+          userRole={effectiveUserRole}
           onAddTransaction={() => setShowAddModal(true)}
           onToggleDrawer={() => setIsDrawerOpen(true)}
           onGoHome={() => {
@@ -2353,7 +2358,7 @@ export default function App() {
         <Sidebar
           isOpen={isDrawerOpen}
           onClose={() => setIsDrawerOpen(false)}
-          userRole={userRole}
+          userRole={effectiveUserRole}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           onAddTransaction={() => setShowAddModal(true)}
@@ -2374,7 +2379,7 @@ export default function App() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-black text-gray-800">نظرة عامة</h2>
             <div className="flex items-center gap-2">
-              {userRole === "admin" && (
+              {effectiveUserRole === "admin" && (
                 <div className="flex items-center bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
                   <button
                     onClick={handleUndo}
@@ -2397,7 +2402,7 @@ export default function App() {
                   </button>
                 </div>
               )}
-              {userRole === "admin" && (
+              {effectiveUserRole === "admin" && (
                 <button
                   onClick={generatePDFReport}
                   disabled={isGeneratingPDF}
@@ -2637,7 +2642,7 @@ export default function App() {
                     </div>
                   </div>
                   <div className="flex gap-2 w-full sm:w-auto flex-1 sm:flex-none sm:justify-end">
-                    {userRole === "admin" && (
+                    {effectiveUserRole === "admin" && (
                       <>
                         <button
                           onClick={() => {
@@ -2755,7 +2760,7 @@ export default function App() {
                       const isSelected = selectedTransactions.includes(tx.id!);
                       return (
                         <div key={tx.id} className={`bg-white p-4 rounded-xl border ${isSelected ? 'border-emerald-400 shadow-md ring-1 ring-emerald-400' : 'border-gray-100 shadow-sm'} flex flex-col gap-3 relative overflow-hidden transition-all cursor-pointer`} onClick={() => {
-                          if (userRole === "admin") {
+                          if (effectiveUserRole === "admin") {
                             setSelectedTransactions(prev => 
                               prev.includes(tx.id!) ? prev.filter(id => id !== tx.id!) : [...prev, tx.id!]
                             );
@@ -2765,7 +2770,7 @@ export default function App() {
                            
                            <div className="flex justify-between items-start pl-1">
                              <div className="flex items-center gap-2">
-                               {userRole === "admin" && (
+                               {effectiveUserRole === "admin" && (
                                  <input 
                                    type="checkbox" 
                                    checked={isSelected}
@@ -2781,10 +2786,12 @@ export default function App() {
                                  {format(tx.date.toDate(), "d/M/yyyy HH:mm")}
                                </span>
                              </div>
-                             <div className="flex items-center gap-1 z-10 relative">
-                                <button onClick={() => { setEditingTransaction(tx); setShowEditModal(true); }} className="p-1.5 text-gray-400 hover:text-blue-500 bg-gray-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
-                                <button onClick={() => handleDeleteTransaction(tx)} className="p-1.5 text-gray-400 hover:text-rose-500 bg-gray-50 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
-                             </div>
+                             {effectiveUserRole === "admin" && (
+                               <div className="flex items-center gap-1 z-10 relative">
+                                  <button onClick={() => { setEditingTransaction(tx); setShowEditModal(true); }} className="p-1.5 text-gray-400 hover:text-blue-500 bg-gray-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
+                                  <button onClick={() => handleDeleteTransaction(tx)} className="p-1.5 text-gray-400 hover:text-rose-500 bg-gray-50 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+                               </div>
+                             )}
                            </div>
                            
                            <div className="flex justify-between items-center pr-2">
@@ -2834,7 +2841,7 @@ export default function App() {
                   <table className="hidden md:table w-full text-right">
                     <thead>
                       <tr className="bg-gray-100/50 text-gray-600 text-[11px] font-bold uppercase tracking-wider border-b border-gray-200">
-                        {userRole === "admin" && (
+                        {effectiveUserRole === "admin" && (
                           <th className="px-4 py-2 w-10">
                             <input 
                               type="checkbox" 
@@ -2874,7 +2881,7 @@ export default function App() {
                               isSelected ? "bg-emerald-50/60" : index % 2 === 0 ? "bg-white" : "bg-gray-50/60"
                             } hover:bg-emerald-50/60 group border-b border-gray-50 last:border-0`}
                           >
-                            {userRole === "admin" && (
+                            {effectiveUserRole === "admin" && (
                               <td className="px-4 py-2">
                                 <input 
                                   type="checkbox" 
@@ -2968,25 +2975,27 @@ export default function App() {
                               {tx.description || "-"}
                             </td>
                             <td className="px-4 py-2">
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => {
-                                    setEditingTransaction(tx);
-                                    setShowEditModal(true);
-                                  }}
-                                  className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-400 hover:text-blue-600 transition-all"
-                                  title="تعديل"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteTransaction(tx)}
-                                  className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-all"
-                                  title="حذف العملية"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
+                              {effectiveUserRole === "admin" && (
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setEditingTransaction(tx);
+                                      setShowEditModal(true);
+                                    }}
+                                    className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-400 hover:text-blue-600 transition-all"
+                                    title="تعديل"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteTransaction(tx)}
+                                    className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-all"
+                                    title="حذف العملية"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              )}
                             </td>
                           </tr>
                         );
@@ -3031,7 +3040,7 @@ export default function App() {
                         <div className="bg-amber-100 p-1.5 rounded-full text-amber-600">
                           <Wallet className="w-3.5 h-3.5" />
                         </div>
-                        {userRole === "admin" && (
+                        {effectiveUserRole === "admin" && (
                           <div className="flex gap-2">
                             <button
                               onClick={() => {
@@ -3082,7 +3091,7 @@ export default function App() {
                     </div>
                   ))}
 
-                  {userRole === "admin" && (
+                  {effectiveUserRole === "admin" && (
                     <button
                       onClick={() => {
                         setEditingCustody(null);
@@ -3804,7 +3813,7 @@ function doPost(e) {
                     </div>
                   </div>
 
-                  {userRole === "admin" && (
+                  {effectiveUserRole === "admin" && (
                     <button
                       onClick={async () => {
                         if (user && tenantId) {
