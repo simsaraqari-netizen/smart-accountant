@@ -332,8 +332,8 @@ export default function App() {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [userRole, setUserRole] = useState<"admin" | "user" | null>(null);
   
-  // Override role for specific email (temporary fix for admin access)
-  const effectiveUserRole = user?.email === "simsaraqari@gmail.com" ? "admin" : userRole;
+  // Temporary fix: make all users admin until Firebase is properly configured
+  const effectiveUserRole = "admin";
   
   // Debug logging
   console.log('User email:', user?.email);
