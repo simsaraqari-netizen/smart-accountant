@@ -2,129 +2,92 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ─── Helper: Any signed-in user ───────────────────────────────────
+    // ─── Helper: signed-in ────────────────────────────────────────────
     function isAuth() {
       return request.auth != null;
     }
 
-    // ─── Helper: Read the current user's Firestore document ───────────
-    function getUserDoc() {
-      let p = /databases/$(database)/documents/users/$(request.auth.uid);
-      return exists(p) ? get(p) : null;
+    // ─── Read the user doc once ───────────────────────────────────────
+    function userData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    function isRegistered() {
-      return isAuth() && getUserDoc() != null;
-    }
-
-    function tenantId() {
-      return getUserDoc().data.tenantId;
-    }
-
-    // ─── Helper: User is admin (either by email or by role field) ─────
+    // ─── Admin: any user whose Firestore role == 'admin' ─────────────
+    // (no hardcoded emails — role is set in DB)
     function isAdmin() {
-      // System-level super admins by email
-      return isAuth() && (
-        request.auth.token.email == 'simsaraqari@gmail.com' ||
-        request.auth.token.email == 'admin@internal.app' ||
-        // OR the Firestore user doc says role == 'admin'
-        (getUserDoc() != null && getUserDoc().data.role == 'admin')
-      );
+      return isAuth() && userData().role == 'admin';
     }
 
-    function canReadTenantDoc() {
-      return isRegistered() && resource.data.userId == tenantId();
+    // ─── Tenant isolation helper ──────────────────────────────────────
+    function myTenantId() {
+      return userData().tenantId;
     }
 
-    function canCreateTenantDoc() {
-      return isAdmin() && isRegistered() && request.resource.data.userId == tenantId();
-    }
-
-    function canWriteTenantDoc() {
-      return isAdmin() && isRegistered() && resource.data.userId == tenantId();
-    }
-
-    function canReadTenantScopedDoc() {
-      return isRegistered() && resource.data.tenantId == tenantId();
-    }
-
-    function canCreateTenantScopedDoc() {
-      return isAdmin() && isRegistered() && request.resource.data.tenantId == tenantId();
-    }
-
-    function canWriteTenantScopedDoc() {
-      return isAdmin() && isRegistered() && resource.data.tenantId == tenantId();
-    }
-
-    // ─── transactions ─────────────────────────────────────────────────
+    // ─── transactions (stored with userId = tenantId) ─────────────────
     match /transactions/{id} {
-      allow read:   if canReadTenantDoc();
-      allow create: if canCreateTenantDoc();
-      allow update: if canWriteTenantDoc();
-      allow delete: if canWriteTenantDoc();
+      allow read:   if isAuth() && resource.data.userId == myTenantId();
+      allow create: if isAdmin() && request.resource.data.userId == myTenantId();
+      allow update: if isAdmin() && resource.data.userId == myTenantId();
+      allow delete: if isAdmin() && resource.data.userId == myTenantId();
     }
 
-    // ─── custody_accounts ─────────────────────────────────────────────
+    // ─── custody_accounts ────────────────────────────────────────────
     match /custody_accounts/{id} {
-      allow read:   if canReadTenantDoc();
-      allow create: if canCreateTenantDoc();
-      allow update: if canWriteTenantDoc() && request.resource.data.userId == resource.data.userId;
-      allow delete: if canWriteTenantDoc();
+      allow read:   if isAuth() && resource.data.userId == myTenantId();
+      allow create: if isAdmin() && request.resource.data.userId == myTenantId();
+      allow update: if isAdmin() && resource.data.userId == myTenantId();
+      allow delete: if isAdmin() && resource.data.userId == myTenantId();
     }
 
-    // ─── categories ───────────────────────────────────────────────────
+    // ─── categories ──────────────────────────────────────────────────
     match /categories/{id} {
-      allow read:   if canReadTenantDoc();
-      allow create: if canCreateTenantDoc();
-      allow update: if canWriteTenantDoc() && request.resource.data.userId == resource.data.userId;
-      allow delete: if canWriteTenantDoc();
+      allow read:   if isAuth() && resource.data.userId == myTenantId();
+      allow create: if isAdmin() && request.resource.data.userId == myTenantId();
+      allow update: if isAdmin() && resource.data.userId == myTenantId();
+      allow delete: if isAdmin() && resource.data.userId == myTenantId();
     }
 
-    // ─── persons ──────────────────────────────────────────────────────
+    // ─── persons ─────────────────────────────────────────────────────
     match /persons/{id} {
-      allow read:   if canReadTenantDoc();
-      allow create: if canCreateTenantDoc();
-      allow update: if canWriteTenantDoc() && request.resource.data.userId == resource.data.userId;
-      allow delete: if canWriteTenantDoc();
+      allow read:   if isAuth() && resource.data.userId == myTenantId();
+      allow create: if isAdmin() && request.resource.data.userId == myTenantId();
+      allow update: if isAdmin() && resource.data.userId == myTenantId();
+      allow delete: if isAdmin() && resource.data.userId == myTenantId();
     }
 
-    // ─── settings ─────────────────────────────────────────────────────
+    // ─── settings ────────────────────────────────────────────────────
     match /settings/{id} {
-      allow read:   if isRegistered() && id == tenantId();
-      allow write:  if isAdmin() && isRegistered() && id == tenantId();
+      allow read:  if isAuth() && id == myTenantId();
+      allow write: if isAdmin() && id == myTenantId();
     }
 
-    // ─── reminders ────────────────────────────────────────────────────
+    // ─── reminders (stored with tenantId) ────────────────────────────
     match /reminders/{id} {
-      allow read:   if canReadTenantScopedDoc();
-      allow create: if canCreateTenantScopedDoc();
-      allow update: if canWriteTenantScopedDoc() && request.resource.data.tenantId == resource.data.tenantId;
-      allow delete: if canWriteTenantScopedDoc();
+      allow read:   if isAuth() && resource.data.tenantId == myTenantId();
+      allow create: if isAdmin() && request.resource.data.tenantId == myTenantId();
+      allow update: if isAdmin() && resource.data.tenantId == myTenantId();
+      allow delete: if isAdmin() && resource.data.tenantId == myTenantId();
     }
 
-    // ─── users ────────────────────────────────────────────────────────
+    // ─── users ───────────────────────────────────────────────────────
     match /users/{userId} {
-      // Any signed-in user can read their own doc; admins can read all
+      // Every user can read their own doc; admins can read all
       allow get:    if isAuth() && (userId == request.auth.uid || isAdmin());
       allow list:   if isAdmin();
-      allow create: if isAdmin() && isRegistered() && request.resource.data.tenantId == tenantId();
-      allow update: if isAdmin()
-        && isRegistered()
-        && resource.data.tenantId == tenantId()
-        && request.resource.data.tenantId == resource.data.tenantId;
+      allow create: if isAdmin() && request.resource.data.tenantId == myTenantId();
+      allow update: if isAdmin() && resource.data.tenantId == myTenantId();
       allow delete: if isAdmin() && userId != request.auth.uid;
     }
 
-    // ─── comments ─────────────────────────────────────────────────────
+    // ─── comments & advertisements ───────────────────────────────────
     match /comments/{id} {
-      allow read:   if isRegistered();
-      allow write:  if isAdmin() && isRegistered();
+      allow read:  if isAuth();
+      allow write: if isAdmin();
     }
 
-    // ─── advertisements ───────────────────────────────────────────────
     match /advertisements/{id} {
-      allow read:   if isRegistered();
-      allow write:  if isAdmin() && isRegistered();
+      allow read:  if isAuth();
+      allow write: if isAdmin();
     }
   }
 }

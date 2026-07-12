@@ -2073,6 +2073,7 @@ export default function App() {
       message: "هل أنت متأكد من حذف هذه العملية؟",
       onConfirm: async () => {
         try {
+          console.log("[DELETE] Starting delete for tx:", tx.id, "userId:", tx.userId, "tenantId:", tenantId);
           const batch = writeBatch(db);
           if (tx.custodyAccountId) {
             const accountRef = doc(db, "custody_accounts", tx.custodyAccountId);
@@ -2085,6 +2086,7 @@ export default function App() {
           const { id: _id, ...dataWithoutId } = tx;
           batch.delete(doc(db, "transactions", tx.id!));
           await batch.commit();
+          console.log("[DELETE] Success for tx:", tx.id);
 
           pushToHistory({
             type: "DELETE",
@@ -2093,7 +2095,9 @@ export default function App() {
             data: dataWithoutId,
           });
           showToast("تم الحذف بنجاح", "success");
-        } catch (err) {
+        } catch (err: any) {
+          console.error("[DELETE] Error:", err?.code, err?.message, err);
+          showToast(`فشل الحذف: ${err?.code || err?.message || "خطأ غير معروف"}`, "error");
           handleFirestoreError(err, "delete", "transactions");
         }
       },
