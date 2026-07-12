@@ -58,10 +58,10 @@ service cloud.firestore {
 
     // ─── transactions ─────────────────────────────────────────────────
     match /transactions/{id} {
-      allow read:   if canReadTenantScopedDoc();
-      allow create: if canCreateTenantScopedDoc();
-      allow update: if canWriteTenantScopedDoc() && request.resource.data.userId == resource.data.userId;
-      allow delete: if canWriteTenantScopedDoc();
+      allow read:   if canReadTenantDoc();
+      allow create: if canCreateTenantDoc();
+      allow update: if canWriteTenantDoc();
+      allow delete: if canWriteTenantDoc();
     }
 
     // ─── custody_accounts ─────────────────────────────────────────────
